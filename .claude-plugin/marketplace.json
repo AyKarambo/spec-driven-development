@@ -1,0 +1,17 @@
+{
+  "name": "spec-driven-development-marketplace",
+  "owner": {
+    "name": "Timo Seikel"
+  },
+  "metadata": {
+    "description": "Personal Claude Code plugin marketplace for spec-driven development."
+  },
+  "plugins": [
+    {
+      "name": "spec-driven-development",
+      "source": "./",
+      "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation with review gates.",
+      "version": "0.1.0"
+    }
+  ]
+}

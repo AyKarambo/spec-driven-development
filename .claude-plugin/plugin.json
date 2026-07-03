@@ -1,0 +1,10 @@
+{
+  "name": "spec-driven-development",
+  "displayName": "Spec-Driven Development",
+  "version": "0.1.0",
+  "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation — with human review gates enforced by a guardrail hook. Fully local, no external services required.",
+  "author": {
+    "name": "Timo Seikel"
+  },
+  "keywords": ["spec-driven-development", "workflow", "planning", "gates"]
+}

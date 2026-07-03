@@ -1,0 +1,11 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local SDD gate state (created in consuming repos, never committed here)
+.claude/sdd/
+
+# Local Claude Code session/runtime state
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
