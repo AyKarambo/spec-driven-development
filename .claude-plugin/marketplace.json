@@ -12,6 +12,12 @@
       "source": "./",
       "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation with review gates.",
       "version": "0.1.0"
+    },
+    {
+      "name": "branch-cleanup",
+      "source": "./branch-cleanup",
+      "description": "Finds and cleans up stale local branches and worktrees left over from feature work — auto-removes what's safely inactive, asks about the rest.",
+      "version": "0.1.0"
     }
   ]
 }
