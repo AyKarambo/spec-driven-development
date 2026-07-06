@@ -54,14 +54,25 @@ command writes the marker as its first action and *leaves it in place* through t
 | `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check) |
 | `/revise` | writes `revise:<slug>`, leaves it |
 | `/reverse-spec` | writes `reverse-spec:<slug>`, leaves it |
-| `/implement` | **deletes** the marker first, then implements exactly one task |
+| `/implement` | **deletes** the marker first, then implements exactly one task; stamps the spec `in-progress`/`done` |
 | `/status` | read-only; never touches the marker |
 | `/next` | delegates marker handling to whichever single step it runs |
+| `/spec-cleanup` | **reads** the marker to protect the active slug; writes no marker (maintenance, like `/status`, but mutates `specs/`) |
 
 **Where the spec lives.** The spec, plan, and tasks are all plain files under `specs/` in the repo:
 `specs/<slug>.spec.md`, `specs/<slug>.plan.md`, `specs/<slug>.tasks.md`. `/spec` and `/reverse-spec`
 write the spec file (after the review gate); `/techplan`, `/breakdown`, `/revise`, `/status`, `/next`
 read it. Everything is local — no network calls, no external tracker.
+
+**Spec lifecycle & cleanup (v0.3).** Each spec carries a YAML frontmatter `status:` that the
+commands maintain — `draft` (`/spec`) → `planned` (`/techplan`, `/breakdown`) → `in-progress` →
+`done` (`/implement`); `/reverse-spec` starts at `done`; `/revise` reopens to `planned`. When a
+feature is `done`, its **plan + tasks are throwaway scaffolding**: `/spec-cleanup` moves them to
+**`specs/archive/`** (or `git rm` with `--delete`) while **keeping the spec** in `specs/` stamped
+`done`. Orphans and age-stale artifacts are only ever flagged for confirmation, never auto-removed.
+Because `/techplan`/`/breakdown`/`/implement` now also edit the spec's frontmatter, and `specs/**`
+is on the allowlist, these status stamps stay gate-safe. Design rationale:
+[docs/specs/2026-07-06-v0.3-lifecycle-cleanup.md](docs/specs/2026-07-06-v0.3-lifecycle-cleanup.md).
 
 **2. Hooks (`hooks/*.js`, wired by `hooks/hooks.json`)** — Node scripts that read the marker and react:
 

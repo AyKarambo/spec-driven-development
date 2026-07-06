@@ -17,5 +17,6 @@ The spec, plan, and tasks are living documents — this keeps them honest when t
    - spec changed → plan and tasks may be stale (`/techplan`, then `/breakdown`)
    - plan changed → tasks may be stale (`/breakdown`)
    Do **not** silently regenerate them — recommend the step and let me decide.
+5. **Reopen the lifecycle if needed.** If the spec was `done` (or `in-progress`) and this revision reopens real work — i.e. the plan/tasks must be regenerated — move the spec's frontmatter `status:` back to `planned` (refresh `updated:`) so the feature no longer looks shipped. If it's only a wording/clarity tweak that leaves the shipped behavior intact, leave the status as-is.
 
 Do **not** write feature code. Present the revision and the staleness flags for review (gate).
