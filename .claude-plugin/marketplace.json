@@ -16,8 +16,8 @@
     {
       "name": "branch-cleanup",
       "source": "./branch-cleanup",
-      "description": "Finds and cleans up stale local branches and worktrees left over from feature work — auto-removes what's safely inactive, asks about the rest.",
-      "version": "0.1.0"
+      "description": "Finds and cleans up stale branches and worktrees left over from feature work — auto-removes what's safely inactive locally, and (opt-in, separately confirmed) prunes matching branches on origin too.",
+      "version": "0.2.0"
     }
   ]
 }
