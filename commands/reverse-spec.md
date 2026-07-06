@@ -10,11 +10,18 @@ This lets the spec-driven workflow apply to features that already exist, not jus
 
 1. **Identify the feature slug** to attach the spec to (from `$ARGUMENTS`, else the current branch). **Gate marker:** write `.claude/sdd/phase` with the line `reverse-spec:<slug>` and leave it in place — it keeps the planning gate active through review until `/implement` clears it.
 2. Explore the relevant code (read-only; use `Explore` subagents if the area is large) to understand what it actually does — inputs, outputs, behavior, edge cases, and constraints already enforced.
-3. Draft the spec in the same shape as `/spec`:
+3. Draft the spec in the same shape as `/spec`. Start with the **YAML frontmatter block**, set to `done` because it documents already-shipped behavior:
+   ```yaml
+   ---
+   slug: <slug>
+   status: done         # reverse-spec documents existing (shipped) code
+   updated: <today's date, YYYY-MM-DD>
+   ---
+   ```
    - **Intent (WHAT & WHY)** – reconstructed from the code and its usage
    - **In-Scope / Out-of-Scope**
    - **Constraints** – limits/assumptions the code already relies on
    - **Acceptance Criteria** – *Given / When / Then*, matching current behavior
    - **Open Questions** – behavior that's ambiguous or looks unintended (flag it, don't "fix" it)
 4. Mark clearly where you **inferred** intent versus where it's **explicit** in the code.
-5. Present the spec for review (**gate**) — do **not** change any code. **Only after I approve**, write it to `specs/<slug>.spec.md`. From here the normal flow (`/techplan` → `/breakdown` → `/implement`) applies to any changes.
+5. Present the spec for review (**gate**) — do **not** change any code. **Only after I approve**, write it to `specs/<slug>.spec.md`. From here the normal flow applies to any changes: a `/techplan` for new work moves `status` back to `planned`.

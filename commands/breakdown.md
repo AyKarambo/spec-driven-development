@@ -15,6 +15,7 @@ You break the plan for **$ARGUMENTS** into small, individually implementable and
    - **Size** – rough (S/M/L)
 4. Rules: each task **small and individually reviewable**, sensibly ordered (dependencies first), no task bigger than necessary.
 5. **Consistency gate (analyze):** before finishing, verify that **every acceptance criterion in `specs/<slug>.spec.md`** maps to at least one task. List any acceptance criteria with no task (gaps) and any tasks that trace to no criterion (scope creep). Make the list complete, or flag what needs a spec/plan revision (`/revise`).
+6. **Lifecycle:** ensure the spec's frontmatter `status:` is `planned` (set it if the spec is still `draft`, and refresh `updated:`) — tasks exist but none are done yet. `/implement` moves it onward.
 
 Note: `/breakdown` is its own command — don't confuse it with the native `/tasks` (= running background jobs).
 

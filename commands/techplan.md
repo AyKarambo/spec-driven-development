@@ -15,6 +15,7 @@ You create the **technical plan** (the HOW) for the feature: $ARGUMENTS
    - **Data Model / Interfaces** – if relevant
    - **Test Strategy** – how the acceptance criteria are verified
    - **Risks & Alternatives** – trade-offs
+5. **Advance the lifecycle:** set the spec's frontmatter `status:` to `planned` (and refresh `updated:` to today) in `specs/<slug>.spec.md` — a plan now exists. If the spec has no frontmatter block yet (e.g. an older spec), add one. This edit stays within `specs/`, so it's allowed even with the gate open.
 
 Note: `/techplan` is its own command — don't confuse it with the native `/plan` (= Plan Mode).
 
