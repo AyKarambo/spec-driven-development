@@ -6,13 +6,15 @@ disable-model-invocation: true
 
 You advance the feature **$ARGUMENTS** by exactly **one** step — then stop at that step's gate. You never skip gates or run several steps at once.
 
-1. Determine the current state (same logic as `/status`): whether `specs/<slug>.spec.md` exists and is non-empty, its frontmatter `status:` if present, whether `specs/<slug>.plan.md` / `.tasks.md` exist, how many tasks are checked, and whether `.claude/sdd/phase` is set. (Resolve the slug from `$ARGUMENTS`, else the current branch.)
+**Preconditions:** `gh` installed + authenticated, GitHub remote present. If not, say so and stop.
+
+1. Determine the current state (same source as `/status`). Resolve the slug from `$ARGUMENTS` (else the current branch), then find its spec issue (`gh issue list --label sdd --state all --limit 500 --json number,title,labels,state,url,subIssuesSummary,body` → title starts with `[SDD] <slug>:`). Note: whether a spec issue exists, its `sdd:*` status label / closed state, whether the `## Technical Plan` section is filled, how many sub-issues are open vs closed, and whether `.claude/sdd/phase` is set.
 2. Decide the single next step and run it, following that command's own instructions exactly:
-   - no spec (`specs/<slug>.spec.md` missing or empty) → run **`/spec`**
-   - spec but no plan → run **`/techplan`**
-   - plan but no tasks → run **`/breakdown`**
-   - tasks with unchecked items → run **`/implement`** for the next single task
-   - all tasks checked (or `status: done`) → report **done**, and if the plan/tasks scaffolding is still in `specs/`, suggest `/spec-cleanup` to retire it
+   - **no spec issue** → run **`/spec`**
+   - spec exists, **Technical Plan section empty, no task sub-issues** → run **`/techplan`** (recommended; for a small feature you may instead run `/breakdown` to skip planning)
+   - **plan present, no task sub-issues** → run **`/breakdown`**
+   - **task sub-issues with open ones** → run **`/implement`** for the next single open task
+   - **all sub-issues closed** (or `sdd:done` / issue closed) → report **done**, and if any stale/orphaned SDD issues remain, suggest `/spec-cleanup`
 3. Handle the gate marker exactly as that step would (planning steps set `.claude/sdd/phase`; `/implement` clears it first).
 4. Stop and present the result for approval. Do **not** continue to the following step — that's my decision.
 

@@ -4,25 +4,39 @@ A personal Claude Code plugin for **spec-driven development** as native slash co
 project constitution through spec and tech plan to small, review-based implementation — with
 **human review gates** enforced by a guardrail hook.
 
-Stack-agnostic: it works on any repo/language. Fully local — no external services, no network
-dependency. Project-specific rules live per-repo in `CLAUDE.md` / `AGENTS.md` (which `/constitution`
-generates).
+Specs, plans, and tasks live in **GitHub issues**, not files in the repo — so the working tree stays
+clean while the planning artifacts get a linkable, reviewable home with native progress tracking.
+
+Stack-agnostic: it works on any repo/language. Project-specific rules live per-repo in
+`CLAUDE.md` / `AGENTS.md` (which `/constitution` generates).
 
 ## Workflow
 
 ```
 /constitution   →  CLAUDE.md (+ AGENTS.md) — principles & guardrails, one-time
       ↓
-/spec           →  specs/<slug>.spec.md      (intent, scope, acceptance criteria)
+/spec           →  GitHub issue "[SDD] <slug>: …"  (user story: intent, scope, acceptance criteria)
       ↓
-/techplan       →  specs/<slug>.plan.md      (technical approach, codebase research)
+/techplan       →  ## Technical Plan section in that issue  (the HOW, codebase research — optional)
       ↓
-/breakdown      →  specs/<slug>.tasks.md     (small tasks + spec↔tasks consistency check)
+/breakdown      →  task sub-issues of that issue  (small tasks + spec↔tasks consistency check)
       ↓
-/implement      →  one task per run, tested, review-ready
+/implement      →  one task sub-issue per run, tested, review-ready; closed when done
 ```
 
-Each step ends with a **gate**: the result is presented for approval before the next step begins. There is no auto-gating — the merge stays a human decision.
+Each step ends with a **gate**: the result is presented for approval before it's written to GitHub or
+the next step begins. There is no auto-gating — the merge stays a human decision.
+
+## How artifacts map to GitHub
+
+- **One spec issue per feature** — title `[SDD] <slug>: <title>`, labeled `sdd`. Its body is the
+  **user story** (WHAT & WHY).
+- **The technical plan** (the HOW) is an optional **`## Technical Plan` section inside that same
+  issue** — recommended for bigger features, skippable for small ones.
+- **Each task is a native GitHub sub-issue** of the spec issue, labeled `sdd:task`. Progress rolls up
+  automatically (GitHub's sub-issue summary); a task is done when its sub-issue is closed.
+- **A feature is done** when its spec issue is labeled `sdd:done` and **closed** — which is what keeps
+  the issue list clean.
 
 Prefer to go hands-off once the spec is approved? **`/auto`** runs everything below the spec
 autonomously — plan, tasks, implementation, code review, and an open PR (see [Auto mode](#auto-mode)).
@@ -32,42 +46,42 @@ autonomously — plan, tasks, implementation, code review, and an open PR (see [
 | Command          | Purpose                                                                     |
 | ---------------- | -------------------------------------------------------------------------- |
 | `/constitution`  | Set/update project principles & guardrails (`CLAUDE.md`, bridges `AGENTS.md`) |
-| `/spec`          | Draft a spec into `specs/<slug>.spec.md` — intent, boundaries, acceptance criteria |
-| `/techplan`      | Derive the technical plan (the HOW) from an approved spec, with research    |
-| `/breakdown`     | Break the plan into small, testable tasks + check acceptance-criteria coverage |
-| `/implement`     | Implement exactly one task — small, tested, reviewable; executor picked by difficulty (S/M → sub-agents, L → main conversation) |
+| `/spec`          | Draft a spec as a GitHub issue — intent, boundaries, acceptance criteria    |
+| `/techplan`      | Derive the technical plan (the HOW) into the spec issue, with research      |
+| `/breakdown`     | Break the plan into small task sub-issues + check acceptance-criteria coverage |
+| `/implement`     | Implement exactly one task sub-issue — small, tested, reviewable; executor picked by difficulty (S/M → sub-agents, L → main conversation) |
 | `/status`        | Show where each feature stands and what the next step is (read-only)        |
-| `/revise`        | Update a spec/plan/tasks and flag which downstream artifacts went stale     |
-| `/reverse-spec`  | Generate a spec from existing code (brownfield adoption)                    |
+| `/revise`        | Update a spec/plan/task issue and flag which downstream artifacts went stale |
+| `/reverse-spec`  | Generate a spec issue from existing code (brownfield adoption)              |
 | `/next`          | Run just the next step for a feature, and stop at its gate                  |
-| `/auto`          | Autopilot: after spec approval, run plan → tasks → implementation → review → PR autonomously |
-| `/spec-cleanup`  | Archive the plan/tasks scaffolding of shipped features; flag stale/orphaned artifacts |
+| `/auto`          | Autopilot: after the spec issue exists, run plan → tasks → implementation → review → PR autonomously |
+| `/spec-cleanup`  | Finalize finished-but-open specs; flag orphaned/stale SDD issues            |
 
 All commands are manual-only (`disable-model-invocation: true`) — **you** trigger them deliberately.
 
-## Spec lifecycle & cleanup
+## Spec lifecycle
 
-Each spec carries a frontmatter `status:` that the commands keep current as work progresses:
+Each spec issue carries a status **label** the commands keep current as work progresses:
 
 ```
-draft ──/techplan──▶ planned ──/implement──▶ in-progress ──/implement (last task)──▶ done
+sdd:draft ──/techplan──▶ sdd:planned ──/implement──▶ sdd:in-progress ──/implement (last task)──▶ sdd:done (closed)
 ```
 
-Once a feature is **done**, its plan and tasks are throwaway scaffolding. **`/spec-cleanup`** moves
-them to `specs/archive/` (or `git rm` with `--delete`) while **keeping the spec** in `specs/`,
-stamped `done` — so the source of truth stays discoverable but `specs/` doesn't fill with stale
-plans and task lists. Orphaned and long-untouched artifacts are only ever flagged for your
-confirmation, never removed automatically. Run `/spec-cleanup --dry-run` to preview.
+`/reverse-spec` starts a feature at `sdd:done` (documenting shipped code); `/revise` reopens a
+done/in-progress feature back to `sdd:planned` when it reopens real work. Because `done` features are
+closed, GitHub keeps the default issue list to live work only. **`/spec-cleanup`** finalizes any
+feature that finished but was left open, and flags orphaned or long-stale SDD issues for your
+confirmation (never removing anything automatically). Run `/spec-cleanup --dry-run` to preview.
 
 ## Auto mode
 
-Once a spec is **approved** (i.e. `specs/<slug>.spec.md` exists — `/spec` only writes it after your
+Once a spec is **approved** (i.e. the spec issue exists — `/spec` only creates it after your
 approval), **`/auto`** takes the feature the rest of the way without stopping at the intermediate
 gates: technical plan → task breakdown → implementation → code review → an open pull request.
 
-- **Enter it at any point after spec approval** — right after `/spec`, mid-planning, or
-  mid-implementation. It detects what already exists and runs only the missing phases; if all tasks
-  are already done it just reviews and opens the PR.
+- **Enter it at any point after the spec issue exists** — right after `/spec`, mid-planning, or
+  mid-implementation. It detects what already exists and runs only the missing phases; if all task
+  sub-issues are already closed it just reviews and opens the PR.
 - **Implementation is dispatched by difficulty:** small mechanical tasks go to sub-agents on a fast
   model, standard tasks to general-purpose sub-agents, and hard/risky tasks are done in the main
   conversation. Every result is verified (tests + diff) before the task is ticked off, with one
@@ -75,34 +89,53 @@ gates: technical plan → task breakdown → implementation → code review → 
 - **The diff is code-reviewed before the PR is opened** (skipped only if a review clearly already
   happened), and clear findings are fixed.
 - **It stops instead of pushing through** on repeated test failures, blockers, or spec conflicts —
-  and reports honestly what's done. Re-running `/auto` resumes from the task checklist.
+  and reports honestly what's done. Re-running `/auto` resumes from the open task sub-issues.
 - **Two decisions are never automated:** approving the spec (the entry ticket) and merging the PR
   (auto mode ends at an open PR).
 
 ## The gate guardrail
 
-The planning commands write a tiny marker `.claude/sdd/phase` (e.g. `spec:invoice-export`) and leave it
-in place through the review gate. A `PreToolUse` hook then **blocks writes to anything outside the
-spec-artifact allowlist** (`specs/**`, `CLAUDE.md`, `AGENTS.md`, `.claude/**`) so feature code can't be
-written before a gate is approved.
-
-The **spec, plan, and tasks** all live as files under `specs/` in the repo — nothing is stored outside it.
+The planning commands write a tiny local marker `.claude/sdd/phase` (e.g. `spec:invoice-export`) and
+leave it in place through the review gate. A `PreToolUse` hook then **blocks writes to anything outside
+a small allowlist** (`CLAUDE.md`, `AGENTS.md`, `.claude/**`) so feature code can't be written before a
+gate is approved. Specs/plans/tasks are written to GitHub via `gh` (a `Bash` call), so they're
+unaffected — only on-disk code is gated.
 
 - `/implement` **clears** the marker first (that's when code may be written).
 - A `SessionStart` notice surfaces an active gate so a stale marker is never invisible.
 - **Override any time:** delete `.claude/sdd/phase`.
 - When no marker exists, the hook does nothing — **zero impact on non-SDD work.**
-- The hook is a Node script (cross-platform: Windows/macOS/Linux). It's a discipline aid, not a security boundary (it doesn't police `Bash` writes).
+- The hook is a Node script (cross-platform: Windows/macOS/Linux). It's a discipline aid, not a
+  security boundary (it doesn't police `Bash` writes).
+
+The marker (`.claude/sdd/phase`) is local, gitignored state — it never gets committed, so the repo
+stays clean.
 
 ## When NOT to use SDD
 
-Over-specifying trivial work is an anti-pattern. Use the **full workflow** for non-trivial or production features; the **lean path** (`/spec → /techplan → /implement`) for small-but-real changes; and **no SDD** for prototypes, spikes, and one-line fixes. The bundled `spec-driven-development` skill helps make this call and routes you in.
+Over-specifying trivial work is an anti-pattern. Use the **full workflow** for non-trivial or
+production features; the **lean path** (`/spec → /breakdown → /implement`, skipping the plan) for
+small-but-real changes; and **no SDD** for prototypes, spikes, and one-line fixes. The bundled
+`spec-driven-development` skill helps make this call and routes you in.
 
 ## Native commands that complement this
 
 `/plan` (Plan Mode — research without editing), `/code-review` (diff, `--fix` applies fixes), `/review` (pull request), `/security-review`, `/agents`, `/mcp`, `/init`, `/memory`.
 
 > `/techplan` and `/breakdown` are deliberately named to avoid colliding with native `/plan` (Plan Mode) and `/tasks` (background jobs).
+
+## Requirements
+
+Because specs live in GitHub issues, the plugin needs:
+
+- **[`gh`](https://cli.github.com/) — the GitHub CLI**, installed and authenticated (`gh auth status`).
+  The token needs the `repo` scope (to create/edit/close issues and sub-issues).
+- **A GitHub remote** on the repo you're working in (`gh repo view` must succeed).
+- **`gh` ≥ 2.x with sub-issue support** (`gh issue create --parent …`) — sub-issues back the task list.
+- **Node.js** (which Claude Code already depends on) for the guardrail hooks.
+
+The commands verify these and stop with guidance if something is missing. `/constitution` is the one
+exception — it writes only local rule files and needs no GitHub access.
 
 ## Installation (local)
 
@@ -130,4 +163,6 @@ changing anything here.
 
 ## Setup
 
-The hooks need **Node.js**, which Claude Code already depends on. No external services or environment variables are required — everything (spec, plan, tasks) lives as plain files in the repo you're working in.
+Install and authenticate `gh` (`gh auth login`), make sure your repo has a GitHub remote, and you're
+ready. The plugin creates the `sdd*` labels it needs on first use. No spec files are ever written to
+the repo — the working tree stays clean.
