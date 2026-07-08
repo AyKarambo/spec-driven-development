@@ -7,6 +7,10 @@ ships it (`.claude-plugin/marketplace.json` lives at the repo root) — a person
 a local path (see [README.md](README.md)). There is no application code, build step, or test suite: the
 plugin is Markdown command/skill definitions plus two small cross-platform Node hook scripts.
 
+**As of v0.4, specs/plans/tasks live in GitHub issues, not in repo files.** The consuming repo needs
+the `gh` CLI (authenticated, `repo` scope) and a GitHub remote. Design rationale:
+[docs/specs/2026-07-08-v0.4-github-issues.md](docs/specs/2026-07-08-v0.4-github-issues.md).
+
 ## ⚠️ Release checklist — do this for EVERY change that ships
 
 1. **Bump the version in BOTH manifests — they must always match:**
@@ -30,17 +34,20 @@ No build/lint/test. Verify with:
 
 - `claude plugin validate .` — validates the manifests, commands, skill, and hooks wiring. Must pass.
 - `node --check hooks/gate-guard.js && node --check hooks/session-notice.js` — after editing either hook.
-- **Functional testing is manual.** Install the plugin into a scratch/consuming repo (or point a local
-  marketplace at this directory) and run the commands. The hooks only *do* anything in a repo that has a
-  `.claude/sdd/phase` marker — see below.
+- **Functional testing is manual.** Install the plugin into a scratch/consuming repo that has a
+  GitHub remote and `gh` authenticated, and run the commands end to end (they create real issues). The
+  hooks only *do* anything in a repo that has a `.claude/sdd/phase` marker — see below.
 
-## Architecture — the gate-marker contract
+## Architecture — two contracts
 
-The whole plugin is organized around one piece of shared state: a one-line marker file
-**`.claude/sdd/phase`** that lives **in the consuming repo** (never in this repo). Its contents are
-`<phase>:<slug>` (e.g. `spec:user-login`), or just `constitution`. Two independent halves cooperate
-through that file — so any change to the marker's path, its `<phase>:<slug>` format, or the write
-allowlist must be mirrored in **both** halves:
+The plugin has two shared contracts. A change to either must be mirrored across every file that
+depends on it.
+
+### Contract A — the gate marker (unchanged in spirit since v0.2)
+
+One shared piece of local state: a one-line marker file **`.claude/sdd/phase`** that lives **in the
+consuming repo** (never in this repo; gitignored). Its contents are `<phase>:<slug>` (e.g.
+`spec:user-login`), or just `constitution`. Two independent halves cooperate through it:
 
 **1. Commands (`commands/*.md`)** — plain-English instructions to Claude, not code. Each planning
 command writes the marker as its first action and *leaves it in place* through the human review gate;
@@ -54,31 +61,17 @@ command writes the marker as its first action and *leaves it in place* through t
 | `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check) |
 | `/revise` | writes `revise:<slug>`, leaves it |
 | `/reverse-spec` | writes `reverse-spec:<slug>`, leaves it |
-| `/implement` | **deletes** the marker first, then implements exactly one task; stamps the spec `in-progress`/`done` |
+| `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task sub-issue; advances the spec issue's status label |
 | `/status` | read-only; never touches the marker |
 | `/next` | delegates marker handling to whichever single step it runs |
-| `/spec-cleanup` | **reads** the marker to protect the active slug; writes no marker (maintenance, like `/status`, but mutates `specs/`) |
-
-**Where the spec lives.** The spec, plan, and tasks are all plain files under `specs/` in the repo:
-`specs/<slug>.spec.md`, `specs/<slug>.plan.md`, `specs/<slug>.tasks.md`. `/spec` and `/reverse-spec`
-write the spec file (after the review gate); `/techplan`, `/breakdown`, `/revise`, `/status`, `/next`
-read it. Everything is local — no network calls, no external tracker.
-
-**Spec lifecycle & cleanup (v0.3).** Each spec carries a YAML frontmatter `status:` that the
-commands maintain — `draft` (`/spec`) → `planned` (`/techplan`, `/breakdown`) → `in-progress` →
-`done` (`/implement`); `/reverse-spec` starts at `done`; `/revise` reopens to `planned`. When a
-feature is `done`, its **plan + tasks are throwaway scaffolding**: `/spec-cleanup` moves them to
-**`specs/archive/`** (or `git rm` with `--delete`) while **keeping the spec** in `specs/` stamped
-`done`. Orphans and age-stale artifacts are only ever flagged for confirmation, never auto-removed.
-Because `/techplan`/`/breakdown`/`/implement` now also edit the spec's frontmatter, and `specs/**`
-is on the allowlist, these status stamps stay gate-safe. Design rationale:
-[docs/specs/2026-07-06-v0.3-lifecycle-cleanup.md](docs/specs/2026-07-06-v0.3-lifecycle-cleanup.md).
+| `/spec-cleanup` | **reads** the marker to protect the active slug; writes no marker (maintenance, like `/status`) |
 
 **2. Hooks (`hooks/*.js`, wired by `hooks/hooks.json`)** — Node scripts that read the marker and react:
 
 - `gate-guard.js` (`PreToolUse` on `Write|Edit|MultiEdit|NotebookEdit`): if the marker exists, **denies**
-  writes to anything outside the allowlist — `specs/**`, `CLAUDE.md`, `AGENTS.md`, `.claude/**` (plus any
-  path outside the repo). So feature code can't be written while a planning gate is open.
+  writes to anything outside the allowlist — `CLAUDE.md`, `AGENTS.md`, `.claude/**` (plus any path
+  outside the repo). So feature code can't be written on disk while a planning gate is open. (There is
+  no `specs/**` entry anymore — specs are not files.)
 - `session-notice.js` (`SessionStart`): surfaces an active marker as context, so a stale gate is never invisible.
 
 Non-negotiable hook properties — **preserve these when editing**:
@@ -87,11 +80,34 @@ Non-negotiable hook properties — **preserve these when editing**:
 - **Zero impact when idle.** No marker → the hooks do nothing, so non-SDD repos are completely unaffected.
 - **Cross-platform Node**, invoked via `${CLAUDE_PLUGIN_ROOT}` — no shell-isms, no hard-coded paths.
 - The guardrail is a **discipline aid, not a security boundary** — it deliberately does not police `Bash`
-  writes (see [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md) §7).
+  writes, which is exactly why `gh` issue writes (specs/plans/tasks) pass through it freely (see
+  [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md) §7).
 
-The umbrella **skill** (`skills/spec-driven-development/SKILL.md`) is the only model-invocable piece: it
-judges *whether* SDD is warranted (full vs. lean vs. none) and routes into the commands. It writes no
-code and touches no marker.
+### Contract B — the GitHub issue model (v0.4)
+
+Every command that stores an artifact does it through `gh`, following one shared scheme. Any change to
+the label names, title format, body markers, or `gh` recipes must be mirrored in **every** command
+that reads or writes them.
+
+- **Spec issue (one per feature):** title `[SDD] <slug>: <human title>`; labels `sdd` + exactly one
+  status label (`sdd:draft` | `sdd:planned` | `sdd:in-progress` | `sdd:done`). Body = the user story,
+  with a hidden `<!-- sdd:slug=<slug> -->` anchor and a `<!-- sdd:plan:start -->` / `<!-- sdd:plan:end -->`
+  marker pair around the optional `## Technical Plan` section. **Done ⇒ labeled `sdd:done` AND closed.**
+- **Task sub-issues:** created with `gh issue create --parent <spec#>`; title `[<slug>] <task>`; label
+  `sdd:task`; body has `Goal:`/`Files:`/`Check:`/`Size:`. **Done ⇒ the sub-issue is closed.** Progress
+  comes from the parent's `subIssuesSummary` (`{total, completed, percentCompleted}`).
+- **Labels** (bootstrapped idempotently by `/spec` and `/reverse-spec` with `gh label create … 2>/dev/null || true`):
+  `sdd` `5319E7`, `sdd:draft` `BFDADC`, `sdd:planned` `1D76DB`, `sdd:in-progress` `FBCA04`,
+  `sdd:done` `0E8A16`, `sdd:task` `C5DEF5`.
+- **Slug → issue lookup:** no repo-side map (that would defeat the clean-repo goal). Commands run
+  `gh issue list --label sdd --state all --json …` and match the title prefix `[SDD] <slug>:`.
+- **Bodies** are written by piping a temp file to `gh issue create/edit --body-file` (a temp file under
+  `.claude/sdd/` is gitignored and on the gate allowlist).
+
+The lifecycle a command maintains: `/spec` → `sdd:draft`; `/techplan` → `sdd:planned`; `/breakdown`
+ensures `sdd:planned`; `/implement` → `sdd:in-progress` (first task) → `sdd:done` + close (last task);
+`/reverse-spec` starts `sdd:done` + closed; `/revise` reopens to `sdd:planned` when it reopens real
+work. `/spec-cleanup` finalizes finished-but-open specs and flags orphan/stale issues.
 
 ## Conventions
 
@@ -100,8 +116,18 @@ code and touches no marker.
   frontmatter, plus `description` and `argument-hint`; `$ARGUMENTS` is the user input.
 - Command names deliberately avoid native collisions: `/techplan` (not `/plan` = Plan Mode) and
   `/breakdown` (not `/tasks` = background jobs).
+- Every issue-touching command starts by verifying its **preconditions** (`gh` installed +
+  authenticated, GitHub remote present) and stops with guidance if any is missing. `/constitution` is
+  exempt (writes only `CLAUDE.md`/`AGENTS.md`/`.claude/rules/`).
+- Planning commands **present the artifact for approval first, then persist to GitHub after approval** —
+  nothing hits GitHub before the gate.
 - Keep the two manifest versions in sync (see the release checklist).
 - Never commit `.claude/sdd/` — it is consuming-repo state and is git-ignored here.
-- Design rationale for the gate-guardrail mechanism lives in
-  [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md); update it when you make
-  architectural changes.
+- Design rationale: the gate mechanism is in
+  [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md); the move to GitHub
+  issues is in [docs/specs/2026-07-08-v0.4-github-issues.md](docs/specs/2026-07-08-v0.4-github-issues.md).
+  Update these when you make architectural changes.
+
+The umbrella **skill** (`skills/spec-driven-development/SKILL.md`) is the only model-invocable piece: it
+judges *whether* SDD is warranted (full vs. lean vs. none) and routes into the commands. It writes no
+code and touches no marker.

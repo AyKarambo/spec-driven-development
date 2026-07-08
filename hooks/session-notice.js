@@ -39,9 +39,9 @@ function main() {
   if (!phase) process.exit(0);
 
   const context =
-    `ℹ️ Spec-Driven Development: a planning gate is active (${phase}). ` +
-    `Only spec artifacts (specs/**, CLAUDE.md, AGENTS.md, .claude/**) can be written until you run ` +
-    `/implement or delete .claude/sdd/phase.`;
+    `ℹ️ Spec-Driven Development: a planning gate is active (${phase}). Specs/plans/tasks live in ` +
+    `GitHub issues (written via gh); on disk, only CLAUDE.md, AGENTS.md, and .claude/** can be ` +
+    `written until you run /implement or delete .claude/sdd/phase.`;
 
   const out = {
     hookSpecificOutput: {
