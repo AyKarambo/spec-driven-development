@@ -61,10 +61,22 @@ command writes the marker as its first action and *leaves it in place* through t
 | `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check) |
 | `/revise` | writes `revise:<slug>`, leaves it |
 | `/reverse-spec` | writes `reverse-spec:<slug>`, leaves it |
-| `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task sub-issue; advances the spec issue's status label |
+| `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task sub-issue via a difficulty-graded executor (S/M → subagents, L → main conversation); advances the spec issue's status label |
 | `/status` | read-only; never touches the marker |
 | `/next` | delegates marker handling to whichever single step it runs |
+| `/auto` | delegates to each phase it runs (planning phases write their marker, the implementation loop **deletes** it) — chains phases without stopping at intermediate gates; requires the spec issue to exist to start |
 | `/spec-cleanup` | **reads** the marker to protect the active slug; writes no marker (maintenance, like `/status`) |
+
+**Auto mode (v0.4).** `/auto` chains the remaining phases (plan → tasks → implement → review → PR)
+autonomously once a spec exists, resuming from whatever artifacts already exist. It introduces
+**no new marker phase, no new allowlist entry, and no new state file** — it reuses each phase's marker
+behavior and simply doesn't stop at the intermediate gates. Two human decisions stay manual: **spec
+approval** (the entry requirement — the **spec issue** existing *is* the approval, because `/spec`
+only creates it post-approval) and **the merge** (`/auto` ends at an open PR, never merges).
+Implementation tasks are dispatched by difficulty: S → subagent on a fast/small model, M →
+general-purpose subagent, L → the main conversation — the same grading `/implement` uses, so manual
+and autonomous runs behave identically per task. Design rationale:
+[docs/specs/2026-07-08-v0.4-auto-mode.md](docs/specs/2026-07-08-v0.4-auto-mode.md).
 
 **2. Hooks (`hooks/*.js`, wired by `hooks/hooks.json`)** — Node scripts that read the marker and react:
 

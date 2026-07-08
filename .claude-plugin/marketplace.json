@@ -10,8 +10,8 @@
     {
       "name": "spec-driven-development",
       "source": "./",
-      "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation with review gates — storing specs, plans, and tasks in GitHub issues (spec issues + task sub-issues) to keep the repo clean. Requires the gh CLI and a GitHub remote.",
-      "version": "0.4.0"
+      "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation with review gates — plus /spec-cleanup for issue hygiene and /auto autopilot from approved spec to open PR. Specs, plans, and tasks live in GitHub issues (spec issues + task sub-issues) to keep the repo clean. Requires the gh CLI and a GitHub remote.",
+      "version": "0.5.0"
     },
     {
       "name": "branch-cleanup",

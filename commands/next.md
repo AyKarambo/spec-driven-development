@@ -17,3 +17,5 @@ You advance the feature **$ARGUMENTS** by exactly **one** step — then stop at 
    - **all sub-issues closed** (or `sdd:done` / issue closed) → report **done**, and if any stale/orphaned SDD issues remain, suggest `/spec-cleanup`
 3. Handle the gate marker exactly as that step would (planning steps set `.claude/sdd/phase`; `/implement` clears it first).
 4. Stop and present the result for approval. Do **not** continue to the following step — that's my decision.
+
+(The autonomous counterpart is `/auto`: once the spec is approved, it runs all remaining steps through review and PR without stopping. `/next` deliberately stays single-step.)
