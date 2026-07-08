@@ -26,7 +26,7 @@ Autopilot can be entered at **any point after spec approval** — right after `/
 
 As the first implementation action, **delete `.claude/sdd/phase`** — same contract as `/implement`: this is the moment feature code may be written. Then work through the unchecked tasks **in order** (the order encodes dependencies):
 
-1. **Grade each task's difficulty** from its Size (S/M/L) and content, and pick the executor accordingly:
+1. **Grade each task's difficulty** from its Size (S/M/L) and content, and pick the executor accordingly — this is the same executor grading `/implement` uses:
    - **S — mechanical** (boilerplate, config, renames, one isolated file): a subagent on a **fast/small model** (e.g. Haiku) with a tight prompt.
    - **M — standard** (a function plus tests, clear boundaries): a **general-purpose subagent** on the default model.
    - **L — hard or risky** (cross-cutting changes, tricky logic, migrations, wide blast radius): do it **yourself in the main conversation** — full context beats delegation — or use a high-capability/high-effort subagent only if the task is genuinely self-contained.

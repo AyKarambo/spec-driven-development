@@ -35,7 +35,7 @@ autonomously — plan, tasks, implementation, code review, and an open PR (see [
 | `/spec`          | Draft a spec into `specs/<slug>.spec.md` — intent, boundaries, acceptance criteria |
 | `/techplan`      | Derive the technical plan (the HOW) from an approved spec, with research    |
 | `/breakdown`     | Break the plan into small, testable tasks + check acceptance-criteria coverage |
-| `/implement`     | Implement exactly one task — small, tested, focused and reviewable          |
+| `/implement`     | Implement exactly one task — small, tested, reviewable; executor picked by difficulty (S/M → sub-agents, L → main conversation) |
 | `/status`        | Show where each feature stands and what the next step is (read-only)        |
 | `/revise`        | Update a spec/plan/tasks and flag which downstream artifacts went stale     |
 | `/reverse-spec`  | Generate a spec from existing code (brownfield adoption)                    |
@@ -71,7 +71,7 @@ gates: technical plan → task breakdown → implementation → code review → 
 - **Implementation is dispatched by difficulty:** small mechanical tasks go to sub-agents on a fast
   model, standard tasks to general-purpose sub-agents, and hard/risky tasks are done in the main
   conversation. Every result is verified (tests + diff) before the task is ticked off, with one
-  focused commit per task.
+  focused commit per task. (Manual `/implement` runs use the same difficulty grading.)
 - **The diff is code-reviewed before the PR is opened** (skipped only if a review clearly already
   happened), and clear findings are fixed.
 - **It stops instead of pushing through** on repeated test failures, blockers, or spec conflicts —
