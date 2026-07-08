@@ -28,4 +28,4 @@ The spec is the source of truth for spec-driven development. Spec first, then co
 5. Phrase it so every reader arrives at the same interpretation.
 6. Present the drafted spec for review (**gate**) — do **not** write code. **Only after I approve**, write it to `specs/<slug>.spec.md`.
 
-The `status` frontmatter drives the lifecycle: `/techplan` advances it to `planned`, `/implement` to `in-progress` then `done`, and `/spec-cleanup` retires the plan/tasks of `done` features. The spec is a living document — use `/revise` when it changes. Only after approval do we move to the plan (`/techplan`).
+The `status` frontmatter drives the lifecycle: `/techplan` advances it to `planned`, `/implement` to `in-progress` then `done`, and `/spec-cleanup` retires the plan/tasks of `done` features. The spec is a living document — use `/revise` when it changes. Only after approval do we move to the plan (`/techplan`) — or, if I want it hands-off from here, `/auto` runs everything from plan to an open PR autonomously.
