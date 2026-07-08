@@ -24,6 +24,9 @@ generates).
 
 Each step ends with a **gate**: the result is presented for approval before the next step begins. There is no auto-gating — the merge stays a human decision.
 
+Prefer to go hands-off once the spec is approved? **`/auto`** runs everything below the spec
+autonomously — plan, tasks, implementation, code review, and an open PR (see [Auto mode](#auto-mode)).
+
 ## Commands
 
 | Command          | Purpose                                                                     |
@@ -32,11 +35,12 @@ Each step ends with a **gate**: the result is presented for approval before the 
 | `/spec`          | Draft a spec into `specs/<slug>.spec.md` — intent, boundaries, acceptance criteria |
 | `/techplan`      | Derive the technical plan (the HOW) from an approved spec, with research    |
 | `/breakdown`     | Break the plan into small, testable tasks + check acceptance-criteria coverage |
-| `/implement`     | Implement exactly one task — small, tested, focused and reviewable          |
+| `/implement`     | Implement exactly one task — small, tested, reviewable; executor picked by difficulty (S/M → sub-agents, L → main conversation) |
 | `/status`        | Show where each feature stands and what the next step is (read-only)        |
 | `/revise`        | Update a spec/plan/tasks and flag which downstream artifacts went stale     |
 | `/reverse-spec`  | Generate a spec from existing code (brownfield adoption)                    |
 | `/next`          | Run just the next step for a feature, and stop at its gate                  |
+| `/auto`          | Autopilot: after spec approval, run plan → tasks → implementation → review → PR autonomously |
 | `/spec-cleanup`  | Archive the plan/tasks scaffolding of shipped features; flag stale/orphaned artifacts |
 
 All commands are manual-only (`disable-model-invocation: true`) — **you** trigger them deliberately.
@@ -54,6 +58,26 @@ them to `specs/archive/` (or `git rm` with `--delete`) while **keeping the spec*
 stamped `done` — so the source of truth stays discoverable but `specs/` doesn't fill with stale
 plans and task lists. Orphaned and long-untouched artifacts are only ever flagged for your
 confirmation, never removed automatically. Run `/spec-cleanup --dry-run` to preview.
+
+## Auto mode
+
+Once a spec is **approved** (i.e. `specs/<slug>.spec.md` exists — `/spec` only writes it after your
+approval), **`/auto`** takes the feature the rest of the way without stopping at the intermediate
+gates: technical plan → task breakdown → implementation → code review → an open pull request.
+
+- **Enter it at any point after spec approval** — right after `/spec`, mid-planning, or
+  mid-implementation. It detects what already exists and runs only the missing phases; if all tasks
+  are already done it just reviews and opens the PR.
+- **Implementation is dispatched by difficulty:** small mechanical tasks go to sub-agents on a fast
+  model, standard tasks to general-purpose sub-agents, and hard/risky tasks are done in the main
+  conversation. Every result is verified (tests + diff) before the task is ticked off, with one
+  focused commit per task. (Manual `/implement` runs use the same difficulty grading.)
+- **The diff is code-reviewed before the PR is opened** (skipped only if a review clearly already
+  happened), and clear findings are fixed.
+- **It stops instead of pushing through** on repeated test failures, blockers, or spec conflicts —
+  and reports honestly what's done. Re-running `/auto` resumes from the task checklist.
+- **Two decisions are never automated:** approving the spec (the entry ticket) and merging the PR
+  (auto mode ends at an open PR).
 
 ## The gate guardrail
 
@@ -96,7 +120,7 @@ claude plugin install spec-driven-development@spec-driven-development-marketplac
 1. Open the **Code** tab → click **＋** next to the prompt box → **Plugins**.
 2. Choose **Add marketplace** and paste the local folder path.
 3. Open **Discover**, pick **Spec-Driven Development** → **Install**.
-4. Run `/reload-plugins` (or restart the app). `/spec`, `/techplan`, `/breakdown`, `/implement`, `/status`, `/revise`, `/reverse-spec`, `/next`, `/spec-cleanup`, and `/constitution` now appear.
+4. Run `/reload-plugins` (or restart the app). `/spec`, `/techplan`, `/breakdown`, `/implement`, `/auto`, `/status`, `/revise`, `/reverse-spec`, `/next`, `/spec-cleanup`, and `/constitution` now appear.
 
 ### Picking up changes
 
