@@ -1,8 +1,8 @@
 {
   "name": "spec-driven-development",
   "displayName": "Spec-Driven Development",
-  "version": "0.5.0",
-  "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation — with human review gates enforced by a guardrail hook, a status lifecycle, /spec-cleanup for issue hygiene, and /auto to run everything after spec approval autonomously through to an open PR. Specs, plans, and tasks live in GitHub issues (spec issues + task sub-issues) so the repo stays clean. Requires the gh CLI and a GitHub remote.",
+  "version": "0.6.0",
+  "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation — with human review gates enforced by a guardrail hook, a status lifecycle, /spec-cleanup for issue hygiene, and /auto to run everything after spec approval autonomously through to an open PR. Specs, plans, and tasks all live in one GitHub issue per feature (tasks as a native checklist) so the repo stays clean. Requires the gh CLI and a GitHub remote.",
   "author": {
     "name": "Timo Seikel"
   },

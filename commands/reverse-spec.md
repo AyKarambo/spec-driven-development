@@ -23,10 +23,13 @@ This lets the spec-driven workflow apply to features that already exist, not jus
 
    <!-- sdd:plan:start -->
    <!-- sdd:plan:end -->
+
+   <!-- sdd:tasks:start -->
+   <!-- sdd:tasks:end -->
    ```
 4. Mark clearly where you **inferred** intent versus where it's **explicit** in the code.
 5. Present the spec for review (**gate**) — do **not** change any code and do **not** create the issue yet. **Only after I approve:**
-   - **Ensure the SDD labels exist** (idempotent — same set and colors as `/spec`: `sdd`, `sdd:draft`, `sdd:planned`, `sdd:in-progress`, `sdd:done`, `sdd:task`; `gh label create … 2>/dev/null || true`).
+   - **Ensure the SDD labels exist** (idempotent — same set and colors as `/spec`: `sdd`, `sdd:draft`, `sdd:planned`, `sdd:in-progress`, `sdd:done`; `gh label create … 2>/dev/null || true`).
    - **Create the issue as already-shipped:** write the body to a temp file (e.g. `.claude/sdd/spec-body.md`) and run `gh issue create --title "[SDD] <slug>: <short title>" --body-file <that file> --label sdd --label sdd:done`, then **close it** (`gh issue close <n> --reason completed`) — reverse-spec documents behavior that already shipped, so it starts `done`.
    - Report the issue number and URL.
 
