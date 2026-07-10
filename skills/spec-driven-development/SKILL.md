@@ -20,8 +20,8 @@ If the request is genuinely trivial, tell the user SDD would be overkill and off
 ## How to guide
 
 1. If there's no `CLAUDE.md` / `AGENTS.md`, suggest `/constitution` first (one-time principles & guardrails; it can bridge Claude Code and Copilot via `@AGENTS.md`).
-2. Start the feature with `/spec` — intent, boundaries, testable Given/When/Then, written to `specs/<slug>.spec.md` in the repo. `/spec` clarifies ambiguity first.
-3. Then `/techplan` (the HOW, with codebase research), `/breakdown` (small testable tasks + a spec↔tasks consistency check), and `/implement` (one task at a time, tested).
+2. Start the feature with `/spec` — intent, boundaries, testable Given/When/Then, published to a `Feature: <slug>` GitHub issue (its `## Spec` section) — there's no local spec file. `/spec` clarifies ambiguity first.
+3. Then `/techplan` (the HOW, with codebase research, added as `## Plan`), `/breakdown` (small testable tasks added as `## Tasks` — native GitHub checkboxes + a spec↔tasks consistency check), and `/implement` (one task at a time, tested — checking off the issue as it goes).
 4. **Every step ends at a human gate** — the result is presented for approval before the next step. A guardrail hook blocks feature-code writes while a planning gate is active. Use `/status` to see where things stand, `/revise` to update living artifacts, and `/next` to run just the next step.
 5. The **merge stays a human decision** — AI review (`/code-review`, `/review`) informs, it does not auto-gate.
 

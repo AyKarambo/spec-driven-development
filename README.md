@@ -4,22 +4,24 @@ A personal Claude Code plugin for **spec-driven development** as native slash co
 project constitution through spec and tech plan to small, review-based implementation — with
 **human review gates** enforced by a guardrail hook.
 
-Stack-agnostic: it works on any repo/language. Fully local — no external services, no network
-dependency. Project-specific rules live per-repo in `CLAUDE.md` / `AGENTS.md` (which `/constitution`
-generates).
+Stack-agnostic: it works on any repo/language. Except for the one-time project constitution
+(`CLAUDE.md`/`AGENTS.md`), **this plugin keeps nothing locally** — spec, plan, and tasks all live in a
+single GitHub issue per feature, titled `Feature: <slug>`, so GitHub's native checkbox tracking (and
+progress bar) does the job instead of a bespoke local format. Project-specific rules live per-repo in
+`CLAUDE.md` / `AGENTS.md` (which `/constitution` generates).
 
 ## Workflow
 
 ```
-/constitution   →  CLAUDE.md (+ AGENTS.md) — principles & guardrails, one-time
+/constitution   →  CLAUDE.md (+ AGENTS.md)         — principles & guardrails, one-time, local
       ↓
-/spec           →  specs/<slug>.spec.md      (intent, scope, acceptance criteria)
+/spec           →  Feature: <slug> issue › ## Spec  (intent, scope, acceptance criteria)
       ↓
-/techplan       →  specs/<slug>.plan.md      (technical approach, codebase research)
+/techplan       →  Feature: <slug> issue › ## Plan  (technical approach, codebase research)
       ↓
-/breakdown      →  specs/<slug>.tasks.md     (small tasks + spec↔tasks consistency check)
+/breakdown      →  Feature: <slug> issue › ## Tasks (small tasks as checkboxes + spec↔tasks consistency check)
       ↓
-/implement      →  one task per run, tested, review-ready
+/implement      →  one task per run, tested, review-ready — checks off the issue
 ```
 
 Each step ends with a **gate**: the result is presented for approval before the next step begins. There is no auto-gating — the merge stays a human decision.
@@ -29,9 +31,9 @@ Each step ends with a **gate**: the result is presented for approval before the 
 | Command          | Purpose                                                                     |
 | ---------------- | -------------------------------------------------------------------------- |
 | `/constitution`  | Set/update project principles & guardrails (`CLAUDE.md`, bridges `AGENTS.md`) |
-| `/spec`          | Draft a spec into `specs/<slug>.spec.md` — intent, boundaries, acceptance criteria |
-| `/techplan`      | Derive the technical plan (the HOW) from an approved spec, with research    |
-| `/breakdown`     | Break the plan into small, testable tasks + check acceptance-criteria coverage |
+| `/spec`          | Draft a spec, published as the `## Spec` section of a `Feature: <slug>` GitHub issue — intent, boundaries, acceptance criteria |
+| `/techplan`      | Derive the technical plan (the HOW) from an approved spec, with research, added as `## Plan` |
+| `/breakdown`     | Break the plan into small, testable tasks added as `## Tasks` (GitHub checkboxes) + check acceptance-criteria coverage |
 | `/implement`     | Implement exactly one task — small, tested, focused and reviewable          |
 | `/status`        | Show where each feature stands and what the next step is (read-only)        |
 | `/revise`        | Update a spec/plan/tasks and flag which downstream artifacts went stale     |
@@ -42,18 +44,23 @@ All commands are manual-only (`disable-model-invocation: true`) — **you** trig
 
 ## The gate guardrail
 
-The planning commands write a tiny marker `.claude/sdd/phase` (e.g. `spec:invoice-export`) and leave it
-in place through the review gate. A `PreToolUse` hook then **blocks writes to anything outside the
-spec-artifact allowlist** (`specs/**`, `CLAUDE.md`, `AGENTS.md`, `.claude/**`) so feature code can't be
-written before a gate is approved.
+The planning commands write a tiny local marker `.claude/sdd/phase` (e.g. `spec:invoice-export`) and
+leave it in place through the review gate. A `PreToolUse` hook then **blocks writes to anything outside
+the allowlist** (`CLAUDE.md`, `AGENTS.md`, `.claude/**`) so feature code can't be written before a gate
+is approved. The marker itself is the one piece of local state this plugin owns beyond the constitution
+— it has to be a local file so the hook can check it synchronously on every write.
 
-The **spec, plan, and tasks** all live as files under `specs/` in the repo — nothing is stored outside it.
+The **spec, plan, and tasks** all live in the feature's GitHub issue body — under `## Spec`, `## Plan`,
+and `## Tasks` respectively — never as local files. Each command reads the issue fresh and only ever
+edits its own section, leaving the others untouched.
 
 - `/implement` **clears** the marker first (that's when code may be written).
 - A `SessionStart` notice surfaces an active gate so a stale marker is never invisible.
 - **Override any time:** delete `.claude/sdd/phase`.
 - When no marker exists, the hook does nothing — **zero impact on non-SDD work.**
-- The hook is a Node script (cross-platform: Windows/macOS/Linux). It's a discipline aid, not a security boundary (it doesn't police `Bash` writes).
+- The hook is a Node script (cross-platform: Windows/macOS/Linux). It's a discipline aid, not a security
+  boundary (it doesn't police `Bash` writes) — which is also why `gh` CLI calls to publish/update the
+  feature issue are never blocked by an open gate.
 
 ## When NOT to use SDD
 
@@ -91,4 +98,9 @@ changing anything here.
 
 ## Setup
 
-The hooks need **Node.js**, which Claude Code already depends on. No external services or environment variables are required — everything (spec, plan, tasks) lives as plain files in the repo you're working in.
+The hooks need **Node.js**, which Claude Code already depends on. No environment variables are
+required. Everything else — spec, plan, tasks — needs the **`gh` CLI**, installed and authenticated
+against a GitHub remote for the repo (a connected GitHub MCP server also works, `gh` is just preferred).
+There is **no local fallback**: if neither is available, `/spec`, `/techplan`, `/breakdown`, `/implement`,
+and `/revise` stop and tell you to set one up rather than writing anything locally. `/constitution` is
+the one command that stays fully local and needs neither.

@@ -17,4 +17,9 @@ This lets the spec-driven workflow apply to features that already exist, not jus
    - **Acceptance Criteria** – *Given / When / Then*, matching current behavior
    - **Open Questions** – behavior that's ambiguous or looks unintended (flag it, don't "fix" it)
 4. Mark clearly where you **inferred** intent versus where it's **explicit** in the code.
-5. Present the spec for review (**gate**) — do **not** change any code. **Only after I approve**, write it to `specs/<slug>.spec.md`. From here the normal flow (`/techplan` → `/breakdown` → `/implement`) applies to any changes.
+5. Present the spec for review (**gate**) — do **not** change any code. **Only after I approve**, publish it:
+   - Search for an existing issue titled `Feature: <slug>` (as in `/techplan`). If found, replace its `## Spec` section, leaving `## Plan`/`## Tasks` untouched.
+   - Otherwise, create **one** new issue titled `Feature: <slug>` whose body opens with a `## Spec` section holding the approved draft.
+   - **If neither the `gh` CLI nor a connected GitHub MCP server's issue tools are available, stop here** and tell me to set one up — do not write the spec anywhere else.
+
+From here the normal flow (`/techplan` → `/breakdown` → `/implement`) applies to any changes.

@@ -40,8 +40,8 @@ function main() {
 
   const context =
     `ℹ️ Spec-Driven Development: a planning gate is active (${phase}). ` +
-    `Only spec artifacts (specs/**, CLAUDE.md, AGENTS.md, .claude/**) can be written until you run ` +
-    `/implement or delete .claude/sdd/phase.`;
+    `Only CLAUDE.md, AGENTS.md, and .claude/** can be written until you run /implement or delete ` +
+    `.claude/sdd/phase — the spec/plan/tasks themselves live in the feature's GitHub issue.`;
 
   const out = {
     hookSpecificOutput: {

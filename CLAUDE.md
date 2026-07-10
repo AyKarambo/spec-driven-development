@@ -51,23 +51,32 @@ command writes the marker as its first action and *leaves it in place* through t
 | `/constitution` | writes `constitution`, then **deletes it before presenting** (one-time setup, no downstream `/implement`) |
 | `/spec` | writes `spec:<slug>`, leaves it |
 | `/techplan` | writes `plan:<slug>`, leaves it (dispatches parallel `Explore` subagents to research the codebase) |
-| `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check) |
+| `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check; publishes the approved checklist as one GitHub issue) |
 | `/revise` | writes `revise:<slug>`, leaves it |
 | `/reverse-spec` | writes `reverse-spec:<slug>`, leaves it |
 | `/implement` | **deletes** the marker first, then implements exactly one task |
 | `/status` | read-only; never touches the marker |
 | `/next` | delegates marker handling to whichever single step it runs |
 
-**Where the spec lives.** The spec, plan, and tasks are all plain files under `specs/` in the repo:
-`specs/<slug>.spec.md`, `specs/<slug>.plan.md`, `specs/<slug>.tasks.md`. `/spec` and `/reverse-spec`
-write the spec file (after the review gate); `/techplan`, `/breakdown`, `/revise`, `/status`, `/next`
-read it. Everything is local — no network calls, no external tracker.
+**Where feature artifacts live.** Spec, plan, and tasks are **never local files** — except for the
+one-time project constitution (`CLAUDE.md`/`AGENTS.md`), this plugin keeps nothing on disk. Each feature
+gets **one GitHub issue**, titled `Feature: <slug>`, with three sections built up over the workflow:
+`## Spec` (by `/spec`/`/reverse-spec`), `## Plan` (by `/techplan`), `## Tasks` (by `/breakdown`, as
+GitHub-native `- [ ]` checkboxes — the progress bar, checked/total, and issue state all come straight
+from GitHub). `/implement` flips checkboxes in `## Tasks`; `/revise` edits whichever section changed;
+`/status`/`/next` read all of it. Every command edits only its own section and leaves the rest of the
+issue body untouched, and every command **finds** the issue by searching its exact title (`Feature:
+<slug>`) rather than reading a local pointer. Prefer the `gh` CLI (via Bash — outside the hook's
+purview, same as any other shell command); fall back to a connected GitHub MCP server's issue tools if
+`gh` is unavailable. **There is no local fallback:** if neither works (no remote, unauthenticated,
+offline), the affected command stops and says so rather than writing anything to disk.
 
 **2. Hooks (`hooks/*.js`, wired by `hooks/hooks.json`)** — Node scripts that read the marker and react:
 
 - `gate-guard.js` (`PreToolUse` on `Write|Edit|MultiEdit|NotebookEdit`): if the marker exists, **denies**
-  writes to anything outside the allowlist — `specs/**`, `CLAUDE.md`, `AGENTS.md`, `.claude/**` (plus any
-  path outside the repo). So feature code can't be written while a planning gate is open.
+  writes to anything outside the allowlist — `CLAUDE.md`, `AGENTS.md`, `.claude/**` (plus any path
+  outside the repo). So feature code (and everything else, since specs/plan/tasks live on GitHub, not
+  disk) can't be written while a planning gate is open.
 - `session-notice.js` (`SessionStart`): surfaces an active marker as context, so a stale gate is never invisible.
 
 Non-negotiable hook properties — **preserve these when editing**:
@@ -92,5 +101,7 @@ code and touches no marker.
 - Keep the two manifest versions in sync (see the release checklist).
 - Never commit `.claude/sdd/` — it is consuming-repo state and is git-ignored here.
 - Design rationale for the gate-guardrail mechanism lives in
-  [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md); update it when you make
-  architectural changes.
+  [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md); design rationale for
+  moving spec/plan/tasks entirely onto a GitHub issue lives in
+  [docs/specs/2026-07-10-github-native-artifacts.md](docs/specs/2026-07-10-github-native-artifacts.md).
+  Update the relevant doc when you make architectural changes.

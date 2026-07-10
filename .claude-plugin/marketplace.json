@@ -11,7 +11,7 @@
       "name": "spec-driven-development",
       "source": "./",
       "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation with review gates.",
-      "version": "0.1.0"
+      "version": "0.3.0"
     }
   ]
 }
