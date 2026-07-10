@@ -1,0 +1,10 @@
+{
+  "name": "branch-cleanup",
+  "displayName": "Branch Cleanup",
+  "version": "0.2.0",
+  "description": "Finds branches and worktrees left over from feature work (e.g. spec-driven development) and cleans them up — auto-removing what's safely inactive, asking about the rest. Local cleanup is the safe default; deleting matching branches on origin is opt-in (--remote) and always confirmed separately.",
+  "author": {
+    "name": "Timo Seikel"
+  },
+  "keywords": ["git", "branches", "worktrees", "cleanup", "maintenance"]
+}

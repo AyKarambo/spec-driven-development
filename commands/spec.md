@@ -1,28 +1,35 @@
 ---
-description: Turn a story/idea into a spec — intent, boundaries, acceptance criteria (before code)
+description: Turn a story/idea into a spec issue on GitHub — intent, boundaries, acceptance criteria (before code)
 argument-hint: [feature slug/name — or empty to infer from the current branch]
 disable-model-invocation: true
 ---
 
-You draft a **spec** for: $ARGUMENTS
+You draft a **spec** (the user story — WHAT & WHY) and open it as a **GitHub issue**: $ARGUMENTS
 
-The spec is the source of truth for spec-driven development. Spec first, then code. Follow the project rules from CLAUDE.md / AGENTS.md, if present.
+The spec issue is the source of truth for spec-driven development. Spec first, then code. Follow the project rules from CLAUDE.md / AGENTS.md, if present.
 
-1. **Identify the feature slug.** Take it from `$ARGUMENTS`; if empty, infer a short kebab-case slug from the current branch name or the feature being discussed. State the slug you resolved — if you can't determine one, stop and ask.
+**Preconditions (verify first, stop with guidance if missing):** `gh --version` and `gh auth status` succeed, and the repo has a GitHub remote (`gh repo view` succeeds). If not, stop and tell me to install/authenticate `gh` or add a GitHub remote — this plugin stores specs in GitHub issues, not files.
+
+1. **Identify the feature slug.** Take it from `$ARGUMENTS`; if empty, infer a short kebab-case slug from the current branch name or the feature being discussed. State the slug you resolved — if you can't determine one, stop and ask. **Check it's free:** `gh issue list --label sdd --state all --limit 500 --json number,title` and see whether any title starts with `[SDD] <slug>:` — if one already exists, stop and point to `/revise` or `/status`.
 2. **Gate marker:** write `.claude/sdd/phase` with the single line `spec:<slug>`. Leave it in place — it keeps the planning gate active through review until `/implement` clears it.
-3. **Clarify first — this is the gate that prevents "vibe-specifying".** If anything about users, goal, scope, or edge cases is ambiguous, ask me **2–3 sharp clarifying questions before writing**. Record my answers under **Resolved questions**, so the de-risking is visible and not lost.
-4. Draft the spec (in the conversation — don't publish anything yet) with these sections:
-   - **Intent (WHAT & WHY)** – the problem and the benefit, not the solution
-   - **In-Scope / Out-of-Scope** – clear boundaries
-   - **Constraints** – technical/business limits, non-goals
-   - **Acceptance Criteria** – testable, in *Given / When / Then* format
-   - **Resolved questions** – the clarifications above, with the decisions taken
-   - **Open Questions** – anything still to clarify
-5. Phrase it so every reader arrives at the same interpretation.
-6. Present the drafted spec for review (**gate**) — do **not** write code.
-7. **Only after I approve**, publish it. This plugin has no local artifact files for specs — the feature's GitHub issue is the only home:
-   - Search for an existing issue titled exactly `Feature: <slug>` (`gh issue list --search "\"Feature: <slug>\" in:title" --state all --json number,title,state,body,url`, or a connected GitHub MCP issue-search tool). If found, replace its `## Spec` section, leaving any existing `## Plan`/`## Tasks` sections untouched.
-   - Otherwise, create **one** new issue titled `Feature: <slug>` whose body opens with a `## Spec` section holding the approved draft (`gh issue create --title "Feature: <slug>" --body-file -`).
-   - **If neither the `gh` CLI (installed and authenticated) nor a connected GitHub MCP server's issue tools are available, stop here** and tell me to set one up — do not write the spec anywhere else.
+3. **Clarify first — this is the gate that prevents "vibe-specifying".** If anything about users, goal, scope, or edge cases is ambiguous, ask me **2–3 sharp clarifying questions before writing**. Record my answers under **Resolved Questions**, so the de-risking is visible and not lost.
+4. Draft the spec issue **body** with a hidden slug anchor first, then the sections:
+   ```markdown
+   <!-- sdd:slug=<slug> -->
+   ## User Story (Intent — WHAT & WHY)   — the problem and the benefit, not the solution
+   ## In Scope / Out of Scope            — clear boundaries
+   ## Constraints                        — technical/business limits, non-goals
+   ## Acceptance Criteria                — testable, in *Given / When / Then* format
+   ## Resolved Questions                 — the clarifications above, with the decisions taken
+   ## Open Questions                     — anything still to clarify
 
-The spec is a living document — use `/revise` when it changes. Only after approval do we move to the plan (`/techplan`).
+   <!-- sdd:plan:start -->
+   <!-- sdd:plan:end -->
+   ```
+   Leave the empty `sdd:plan` marker pair at the end — `/techplan` fills the **## Technical Plan** between them later (optional for small features).
+5. Phrase it so every reader arrives at the same interpretation.
+6. Present the drafted spec for review (**gate**) — do **not** write code and do **not** create the issue yet. **Only after I approve:**
+   - **Ensure the SDD labels exist** (idempotent): for each of `sdd` (color `5319E7`), `sdd:draft` (`BFDADC`), `sdd:planned` (`1D76DB`), `sdd:in-progress` (`FBCA04`), `sdd:done` (`0E8A16`), `sdd:task` (`C5DEF5`) run `gh label create <name> --color <hex> --description "spec-driven development" 2>/dev/null || true`.
+   - **Create the spec issue:** write the body to a temp file (e.g. `.claude/sdd/spec-body.md` — gitignored and gate-allowed) and run `gh issue create --title "[SDD] <slug>: <short title>" --body-file <that file> --label sdd --label sdd:draft`. Report the created issue number and URL.
+
+The status **label** drives the lifecycle: `/techplan` advances it to `sdd:planned`, `/implement` to `sdd:in-progress` then `sdd:done` (and closes the issue), and `/revise` reopens it. The spec is a living document — use `/revise` when it changes. Only after approval do we move to the plan (`/techplan`) or straight to `/breakdown` for a small feature — or, if you want it hands-off from here, `/auto` runs everything from plan to an open PR autonomously.
