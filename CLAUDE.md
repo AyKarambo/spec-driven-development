@@ -9,7 +9,9 @@ plugin is Markdown command/skill definitions plus two small cross-platform Node 
 
 **As of v0.4, specs/plans/tasks live in GitHub issues, not in repo files.** The consuming repo needs
 the `gh` CLI (authenticated, `repo` scope) and a GitHub remote. Design rationale:
-[docs/specs/2026-07-08-v0.4-github-issues.md](docs/specs/2026-07-08-v0.4-github-issues.md).
+[docs/specs/2026-07-08-v0.4-github-issues.md](docs/specs/2026-07-08-v0.4-github-issues.md), amended by
+[docs/specs/2026-07-10-tasks-checklist-not-subissues.md](docs/specs/2026-07-10-tasks-checklist-not-subissues.md)
+(tasks are a checklist inside the spec issue, not sub-issues).
 
 ## ⚠️ Release checklist — do this for EVERY change that ships
 
@@ -58,10 +60,10 @@ command writes the marker as its first action and *leaves it in place* through t
 | `/constitution` | writes `constitution`, then **deletes it before presenting** (one-time setup, no downstream `/implement`) |
 | `/spec` | writes `spec:<slug>`, leaves it |
 | `/techplan` | writes `plan:<slug>`, leaves it (dispatches parallel `Explore` subagents to research the codebase) |
-| `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check) |
+| `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check; fills the `## Tasks` checklist in the spec issue) |
 | `/revise` | writes `revise:<slug>`, leaves it |
 | `/reverse-spec` | writes `reverse-spec:<slug>`, leaves it |
-| `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task sub-issue via a difficulty-graded executor (S/M → subagents, L → main conversation); advances the spec issue's status label |
+| `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task from the spec issue's `## Tasks` checklist via a difficulty-graded executor (S/M → subagents, L → main conversation); advances the spec issue's status label |
 | `/status` | read-only; never touches the marker |
 | `/next` | delegates marker handling to whichever single step it runs |
 | `/auto` | delegates to each phase it runs (planning phases write their marker, the implementation loop **deletes** it) — chains phases without stopping at intermediate gates; requires the spec issue to exist to start |
@@ -95,31 +97,35 @@ Non-negotiable hook properties — **preserve these when editing**:
   writes, which is exactly why `gh` issue writes (specs/plans/tasks) pass through it freely (see
   [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md) §7).
 
-### Contract B — the GitHub issue model (v0.4)
+### Contract B — the GitHub issue model (v0.4, tasks amended 2026-07-10)
 
 Every command that stores an artifact does it through `gh`, following one shared scheme. Any change to
 the label names, title format, body markers, or `gh` recipes must be mirrored in **every** command
 that reads or writes them.
 
-- **Spec issue (one per feature):** title `[SDD] <slug>: <human title>`; labels `sdd` + exactly one
-  status label (`sdd:draft` | `sdd:planned` | `sdd:in-progress` | `sdd:done`). Body = the user story,
-  with a hidden `<!-- sdd:slug=<slug> -->` anchor and a `<!-- sdd:plan:start -->` / `<!-- sdd:plan:end -->`
-  marker pair around the optional `## Technical Plan` section. **Done ⇒ labeled `sdd:done` AND closed.**
-- **Task sub-issues:** created with `gh issue create --parent <spec#>`; title `[<slug>] <task>`; label
-  `sdd:task`; body has `Goal:`/`Files:`/`Check:`/`Size:`. **Done ⇒ the sub-issue is closed.** Progress
-  comes from the parent's `subIssuesSummary` (`{total, completed, percentCompleted}`).
+- **One issue per feature (spec + plan + tasks, all in one place):** title `[SDD] <slug>: <human title>`;
+  labels `sdd` + exactly one status label (`sdd:draft` | `sdd:planned` | `sdd:in-progress` | `sdd:done`).
+  Body = the user story, with a hidden `<!-- sdd:slug=<slug> -->` anchor and two marker pairs:
+  `<!-- sdd:plan:start -->` / `<!-- sdd:plan:end -->` around the optional `## Technical Plan` section,
+  and `<!-- sdd:tasks:start -->` / `<!-- sdd:tasks:end -->` around the `## Tasks` checklist. **Done ⇒
+  labeled `sdd:done` AND closed.**
+- **Tasks are a checklist, not sub-issues:** lines inside `## Tasks`, one per task —
+  `- [ ] **T<n>: <goal>** (S/M/L)` with indented Files/Check sub-lines. **Done ⇒ the line is checked
+  (`- [x]`)**, pushed with `gh issue edit <n> --body-file -` on the same issue. Progress is the
+  checked/total count of those lines, read directly from the body — there is no `subIssuesSummary` to
+  read, because there are no sub-issues.
 - **Labels** (bootstrapped idempotently by `/spec` and `/reverse-spec` with `gh label create … 2>/dev/null || true`):
   `sdd` `5319E7`, `sdd:draft` `BFDADC`, `sdd:planned` `1D76DB`, `sdd:in-progress` `FBCA04`,
-  `sdd:done` `0E8A16`, `sdd:task` `C5DEF5`.
+  `sdd:done` `0E8A16`. (No `sdd:task` label — nothing task-shaped needs labeling anymore.)
 - **Slug → issue lookup:** no repo-side map (that would defeat the clean-repo goal). Commands run
   `gh issue list --label sdd --state all --json …` and match the title prefix `[SDD] <slug>:`.
 - **Bodies** are written by piping a temp file to `gh issue create/edit --body-file` (a temp file under
   `.claude/sdd/` is gitignored and on the gate allowlist).
 
 The lifecycle a command maintains: `/spec` → `sdd:draft`; `/techplan` → `sdd:planned`; `/breakdown`
-ensures `sdd:planned`; `/implement` → `sdd:in-progress` (first task) → `sdd:done` + close (last task);
-`/reverse-spec` starts `sdd:done` + closed; `/revise` reopens to `sdd:planned` when it reopens real
-work. `/spec-cleanup` finalizes finished-but-open specs and flags orphan/stale issues.
+ensures `sdd:planned`; `/implement` → `sdd:in-progress` (first task checked) → `sdd:done` + close (last
+task checked); `/reverse-spec` starts `sdd:done` + closed; `/revise` reopens to `sdd:planned` when it
+reopens real work. `/spec-cleanup` finalizes finished-but-open specs and flags stale issues.
 
 ## Conventions
 
@@ -137,8 +143,10 @@ work. `/spec-cleanup` finalizes finished-but-open specs and flags orphan/stale i
 - Never commit `.claude/sdd/` — it is consuming-repo state and is git-ignored here.
 - Design rationale: the gate mechanism is in
   [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md); the move to GitHub
-  issues is in [docs/specs/2026-07-08-v0.4-github-issues.md](docs/specs/2026-07-08-v0.4-github-issues.md).
-  Update these when you make architectural changes.
+  issues is in [docs/specs/2026-07-08-v0.4-github-issues.md](docs/specs/2026-07-08-v0.4-github-issues.md);
+  the switch from task sub-issues to a checklist inside the spec issue is in
+  [docs/specs/2026-07-10-tasks-checklist-not-subissues.md](docs/specs/2026-07-10-tasks-checklist-not-subissues.md).
+  Update the relevant doc when you make architectural changes.
 
 The umbrella **skill** (`skills/spec-driven-development/SKILL.md`) is the only model-invocable piece: it
 judges *whether* SDD is warranted (full vs. lean vs. none) and routes into the commands. It writes no

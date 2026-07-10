@@ -20,7 +20,7 @@ The plan is the *technical* answer to the spec's *user story*. It lives as a **`
    - **Test Strategy** – how the acceptance criteria are verified
    - **Risks & Alternatives** – trade-offs
 5. Present the plan for review (**gate**) — do **not** write feature code and do **not** touch the issue yet. **Only after I approve, record it in the spec issue:**
-   - Read the current body (`gh issue view <n> --json body -q .body`), replace the content **between** the `<!-- sdd:plan:start -->` and `<!-- sdd:plan:end -->` markers with a `## Technical Plan` heading followed by the plan (leave the markers in place), write the new body to a temp file, and `gh issue edit <n> --body-file <that file>`.
+   - Read the current body (`gh issue view <n> --json body -q .body`), replace the content **between** the `<!-- sdd:plan:start -->` and `<!-- sdd:plan:end -->` markers with a `## Technical Plan` heading followed by the plan (leave the markers, and the separate `<!-- sdd:tasks:start/end -->` pair, untouched), write the new body to a temp file, and `gh issue edit <n> --body-file <that file>`.
    - **Advance the lifecycle to `sdd:planned`:** `gh issue edit <n> --add-label sdd:planned` and remove whichever *other* `sdd:*` status label the issue currently has (you already have its labels from step 1 — typically `--remove-label sdd:draft`; only pass `--remove-label` for labels that are actually present). If the issue was **closed** (e.g. from `/reverse-spec`), first reopen it (`gh issue reopen <n>`).
 
 Note: `/techplan` is its own command — don't confuse it with the native `/plan` (= Plan Mode).

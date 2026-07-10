@@ -1,21 +1,22 @@
 ---
-description: Update an existing spec issue / plan section / task sub-issues when requirements change, and flag stale downstream artifacts
+description: Update an existing spec issue / plan section / task checklist when requirements change, and flag stale downstream artifacts
 argument-hint: [feature slug/name + what changed]
 disable-model-invocation: true
 ---
 
 You **revise** an existing artifact for the feature: $ARGUMENTS
 
-The spec, plan, and tasks are living documents — this keeps them honest when things change. All of them live in **GitHub issues**.
+The spec, plan, and tasks are living documents — this keeps them honest when things change. All of them live in **one GitHub issue**.
 
 **Preconditions:** `gh` installed + authenticated, GitHub remote present. If not, say so and stop.
 
-1. **Find the feature.** Resolve the slug (from `$ARGUMENTS`, else the current branch) and locate the spec issue (`gh issue list --label sdd --state all --limit 500 --json number,title,body,state,labels,url` → title starts with `[SDD] <slug>:`). Read its body and, if relevant, its task sub-issues (`gh issue view <n> --json subIssues`). If no spec issue exists, stop and point to `/spec`.
+1. **Find the feature.** Resolve the slug (from `$ARGUMENTS`, else the current branch) and locate the spec issue (`gh issue list --label sdd --state all --limit 500 --json number,title,body,state,labels,url` → title starts with `[SDD] <slug>:`). Read its full body — the user story, the `## Technical Plan` section, and the `## Tasks` section. If no spec issue exists, stop and point to `/spec`.
 2. **Gate marker:** write `.claude/sdd/phase` with the line `revise:<slug>` and leave it in place (revisions only touch spec artifacts, never code).
-3. Apply the requested change to the correct artifact, preserving the section structure and markers:
+3. Apply the requested change to the correct section, preserving the others and all marker pairs:
    - **spec (user story)** → present the revised body sections for review, then after I approve edit the issue body (`gh issue edit <n> --body-file <temp>`).
-   - **plan** → replace the content between `<!-- sdd:plan:start -->` / `<!-- sdd:plan:end -->` (keep the markers) and update the body.
-   - **tasks** → edit a task sub-issue's body, add a new one (`gh issue create … --parent <n> --label sdd:task`), or close one that's no longer needed (`gh issue close`).
+   - **plan** → replace the content between `<!-- sdd:plan:start -->` / `<!-- sdd:plan:end -->` (keep the markers).
+   - **tasks** → replace the content between `<!-- sdd:tasks:start -->` / `<!-- sdd:tasks:end -->` (keep the markers). Add, reorder, or reword `- [ ]` lines as requested, but preserve the checked state (`- [x]`) of any task you aren't asked to change — don't silently uncheck completed work.
+   Present the revision for review, then push the updated body (`gh issue edit <n> --body-file <temp>`) only after I approve.
 4. **Flag downstream staleness.** Because the artifacts depend on each other (spec → plan → tasks), state clearly which downstream artifacts are now potentially out of date and should be regenerated:
    - spec changed → plan and tasks may be stale (`/techplan`, then `/breakdown`)
    - plan changed → tasks may be stale (`/breakdown`)

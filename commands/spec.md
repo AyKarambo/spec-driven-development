@@ -25,11 +25,16 @@ The spec issue is the source of truth for spec-driven development. Spec first, t
 
    <!-- sdd:plan:start -->
    <!-- sdd:plan:end -->
+
+   <!-- sdd:tasks:start -->
+   <!-- sdd:tasks:end -->
    ```
-   Leave the empty `sdd:plan` marker pair at the end — `/techplan` fills the **## Technical Plan** between them later (optional for small features).
+   Leave the empty `sdd:plan` and `sdd:tasks` marker pairs at the end — `/techplan` fills the
+   **## Technical Plan** between the first pair later (optional for small features), and `/breakdown`
+   fills **## Tasks** between the second.
 5. Phrase it so every reader arrives at the same interpretation.
 6. Present the drafted spec for review (**gate**) — do **not** write code and do **not** create the issue yet. **Only after I approve:**
-   - **Ensure the SDD labels exist** (idempotent): for each of `sdd` (color `5319E7`), `sdd:draft` (`BFDADC`), `sdd:planned` (`1D76DB`), `sdd:in-progress` (`FBCA04`), `sdd:done` (`0E8A16`), `sdd:task` (`C5DEF5`) run `gh label create <name> --color <hex> --description "spec-driven development" 2>/dev/null || true`.
+   - **Ensure the SDD labels exist** (idempotent): for each of `sdd` (color `5319E7`), `sdd:draft` (`BFDADC`), `sdd:planned` (`1D76DB`), `sdd:in-progress` (`FBCA04`), `sdd:done` (`0E8A16`) run `gh label create <name> --color <hex> --description "spec-driven development" 2>/dev/null || true`.
    - **Create the spec issue:** write the body to a temp file (e.g. `.claude/sdd/spec-body.md` — gitignored and gate-allowed) and run `gh issue create --title "[SDD] <slug>: <short title>" --body-file <that file> --label sdd --label sdd:draft`. Report the created issue number and URL.
 
 The status **label** drives the lifecycle: `/techplan` advances it to `sdd:planned`, `/implement` to `sdd:in-progress` then `sdd:done` (and closes the issue), and `/revise` reopens it. The spec is a living document — use `/revise` when it changes. Only after approval do we move to the plan (`/techplan`) or straight to `/breakdown` for a small feature — or, if you want it hands-off from here, `/auto` runs everything from plan to an open PR autonomously.
