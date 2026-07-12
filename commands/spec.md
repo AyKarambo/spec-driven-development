@@ -12,7 +12,7 @@ The spec issue is the source of truth for spec-driven development. Spec first, t
 
 1. **Identify the feature slug.** Take it from `$ARGUMENTS`; if empty, infer a short kebab-case slug from the current branch name or the feature being discussed. State the slug you resolved — if you can't determine one, stop and ask. **Check it's free:** `gh issue list --label sdd --state all --limit 500 --json number,title` and see whether any title starts with `[SDD] <slug>:` — if one already exists, stop and point to `/revise` or `/status`.
 2. **Gate marker:** write `.claude/sdd/phase` with the single line `spec:<slug>`. Leave it in place — it keeps the planning gate active through review until `/implement` clears it.
-3. **Clarify first — this is the gate that prevents "vibe-specifying".** If anything about users, goal, scope, or edge cases is ambiguous, ask me **2–3 sharp clarifying questions before writing**. Record my answers under **Resolved Questions**, so the de-risking is visible and not lost.
+3. **Clarify first — this is the gate that prevents "vibe-specifying".** If anything about users, goal, scope, or edge cases is ambiguous, ask me sharp clarifying questions before writing. **2–3 is the norm, but never cap yourself there** — it's far better to ask another round than to leave **Open Questions** on the table or bake in an assumption. Keep asking until every ambiguity that materially affects what to build is resolved. Record my answers under **Resolved Questions**, so the de-risking is visible and not lost.
 4. Draft the spec issue **body** with a hidden slug anchor first, then the sections:
    ```markdown
    <!-- sdd:slug=<slug> -->
