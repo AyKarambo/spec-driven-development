@@ -12,7 +12,7 @@ Focus (optional): $ARGUMENTS
 
 Approach:
 1. Read the existing context where available: CLAUDE.md, AGENTS.md, README.md, and the build/package files (e.g. package.json).
-2. If something essential is unclear (stack, test command, architecture, definition of done), ask me **2–3 targeted questions** before writing.
+2. If something essential is unclear (stack, test command, architecture, definition of done), ask me targeted questions before writing. **2–3 is the norm, but never cap yourself there** — it's far better to ask another round than to guess or bake in an assumption. Keep asking until everything essential to the constitution is nailed down.
 3. Create or update **CLAUDE.md** with concise, concrete rules (rule of thumb: < 200 lines). Structure:
    - **Stack & Tooling** – languages, frameworks, package managers
    - **Build & Test** – exact commands (e.g. `npm test`)
