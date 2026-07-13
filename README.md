@@ -162,6 +162,40 @@ Since this is a local-path marketplace, edits to this folder aren't picked up au
 `claude plugin marketplace update spec-driven-development-marketplace` (or restart Claude Code) after
 changing anything here.
 
+### Troubleshooting: the desktop app is stuck on an old version
+
+The desktop app and the CLI both read the **same** install record
+(`~/.claude/plugins/installed_plugins.json`) — the desktop app has no private plugin config. So a
+mismatch usually means the plugin was **never actually updated in place**: bumping the version in this
+folder doesn't advance the *installed* copy until you refresh the marketplace **and** update the
+plugin. A plain uninstall/reinstall from inside a running app can silently re-install the old cached
+version (a local *directory* marketplace doesn't auto-refresh), and the `claude plugin validate`
+version you see is the *source* version, not the installed one.
+
+Fix it from the CLI:
+
+```bash
+# 1. Refresh the local marketplace so it re-reads marketplace.json (the new version)
+claude plugin marketplace update spec-driven-development-marketplace
+
+# 2. Update the installed plugin — writes a fresh cache copy + advances installed_plugins.json
+claude plugin update spec-driven-development@spec-driven-development-marketplace
+```
+
+If it still won't move, force a clean cycle **after** the refresh:
+
+```bash
+claude plugin uninstall spec-driven-development@spec-driven-development-marketplace
+claude plugin marketplace update spec-driven-development-marketplace
+claude plugin install spec-driven-development@spec-driven-development-marketplace
+```
+
+Then **fully quit and relaunch the desktop app** — closing the window leaves it running in the tray,
+and plugins are loaded once at startup, so on-disk changes won't show until a fresh launch.
+
+Verify it took: `~/.claude/plugins/installed_plugins.json` should now show the new version and a
+matching install path (e.g. `…\spec-driven-development\0.6.1`).
+
 ## Setup
 
 Install and authenticate `gh` (`gh auth login`), make sure your repo has a GitHub remote, and you're
