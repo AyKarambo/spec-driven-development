@@ -11,7 +11,7 @@
       "name": "spec-driven-development",
       "source": "./",
       "description": "Personal spec-driven development workflow: constitution, spec, tech plan, task breakdown, and focused implementation with review gates — plus /spec-cleanup for issue hygiene and /auto autopilot from approved spec to open PR. Specs, plans, and tasks all live in one GitHub issue per feature (tasks as a native checklist) to keep the repo clean. Requires the gh CLI and a GitHub remote.",
-      "version": "0.6.1"
+      "version": "0.7.0"
     },
     {
       "name": "branch-cleanup",

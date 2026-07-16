@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This repo is **both** the **Spec-Driven Development** Claude Code plugin **and** the marketplace that
 ships it (`.claude-plugin/marketplace.json` lives at the repo root) — a personal plugin, installed from
 a local path (see [README.md](README.md)). There is no application code, build step, or test suite: the
-plugin is Markdown command/skill definitions plus two small cross-platform Node hook scripts.
+plugin is Markdown command/skill/agent definitions plus two small cross-platform Node hook scripts.
 
 **As of v0.4, specs/plans/tasks live in GitHub issues, not in repo files.** The consuming repo needs
 the `gh` CLI (authenticated, `repo` scope) and a GitHub remote. Design rationale:
@@ -63,7 +63,7 @@ command writes the marker as its first action and *leaves it in place* through t
 | `/breakdown` | writes `tasks:<slug>`, leaves it (ends with a spec↔tasks consistency check; fills the `## Tasks` checklist in the spec issue) |
 | `/revise` | writes `revise:<slug>`, leaves it |
 | `/reverse-spec` | writes `reverse-spec:<slug>`, leaves it |
-| `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task from the spec issue's `## Tasks` checklist via a difficulty-graded executor (S/M → subagents, L → main conversation); advances the spec issue's status label |
+| `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task from the spec issue's `## Tasks` checklist via a difficulty-graded executor (S → `sdd-quick`/Haiku, M → `sdd-standard`/Sonnet, L → main conversation); advances the spec issue's status label |
 | `/status` | read-only; never touches the marker |
 | `/next` | delegates marker handling to whichever single step it runs |
 | `/auto` | delegates to each phase it runs (planning phases write their marker, the implementation loop **deletes** it) — chains phases without stopping at intermediate gates; requires the spec issue to exist to start |
@@ -75,8 +75,8 @@ autonomously once a spec exists, resuming from whatever artifacts already exist.
 behavior and simply doesn't stop at the intermediate gates. Two human decisions stay manual: **spec
 approval** (the entry requirement — the **spec issue** existing *is* the approval, because `/spec`
 only creates it post-approval) and **the merge** (`/auto` ends at an open PR, never merges).
-Implementation tasks are dispatched by difficulty: S → subagent on a fast/small model, M →
-general-purpose subagent, L → the main conversation — the same grading `/implement` uses, so manual
+Implementation tasks are dispatched by difficulty: S → the `sdd-quick` subagent (Haiku), M →
+the `sdd-standard` subagent (Sonnet), L → the main conversation — the same grading `/implement` uses, so manual
 and autonomous runs behave identically per task. Design rationale:
 [docs/specs/2026-07-08-v0.4-auto-mode.md](docs/specs/2026-07-08-v0.4-auto-mode.md).
 
@@ -145,9 +145,26 @@ reopens real work. `/spec-cleanup` finalizes finished-but-open specs and flags s
   [docs/specs/2026-07-03-v0.2-design.md](docs/specs/2026-07-03-v0.2-design.md); the move to GitHub
   issues is in [docs/specs/2026-07-08-v0.4-github-issues.md](docs/specs/2026-07-08-v0.4-github-issues.md);
   the switch from task sub-issues to a checklist inside the spec issue is in
-  [docs/specs/2026-07-10-tasks-checklist-not-subissues.md](docs/specs/2026-07-10-tasks-checklist-not-subissues.md).
+  [docs/specs/2026-07-10-tasks-checklist-not-subissues.md](docs/specs/2026-07-10-tasks-checklist-not-subissues.md);
+  the pinned executor agents (`sdd-quick`/`sdd-standard`) are in
+  [docs/specs/2026-07-16-v0.7-pinned-executor-agents.md](docs/specs/2026-07-16-v0.7-pinned-executor-agents.md).
   Update the relevant doc when you make architectural changes.
 
 The umbrella **skill** (`skills/spec-driven-development/SKILL.md`) is the only model-invocable piece: it
 judges *whether* SDD is warranted (full vs. lean vs. none) and routes into the commands. It writes no
 code and touches no marker.
+
+## Executor agents (`agents/*.md`)
+
+The difficulty-graded executor that `/implement` and `/auto` use is backed by two **plugin subagents with
+pinned models**, so the S/M tiers are deterministic instead of left to the lead's per-run model choice:
+
+- `agents/sdd-quick.md` — **Haiku**, for **S** (mechanical) tasks.
+- `agents/sdd-standard.md` — **Sonnet**, for **M** (standard) tasks.
+- **L** tasks are never delegated — the lead (main conversation) implements them directly.
+
+Both workers are scoped to SDD implementation only (their `description` says so, to avoid spurious
+auto-delegation outside the workflow), carry only file/search/Bash tools, and do **no bookkeeping** — they
+implement one task and report back; the lead verifies the result, edits the GitHub issue, moves labels, and
+commits. If you rename a worker, change its pinned model, or add a tier, mirror it in **both** command files
+(`commands/implement.md` step 4 and `commands/auto.md`'s implementation loop) and in Contract A's table above.
