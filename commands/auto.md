@@ -29,9 +29,9 @@ Autopilot can be entered at **any point after the spec issue exists** — right 
 As the first implementation action, **delete `.claude/sdd/phase`** — same contract as `/implement`: this is the moment feature code may be written. Then work through the **unchecked** tasks in the `## Tasks` checklist **in order** (the order encodes dependencies):
 
 1. **Grade each task's difficulty** from its Size (S/M/L) and content, and pick the executor accordingly — this is the same executor grading `/implement` uses:
-   - **S — mechanical** (boilerplate, config, renames, one isolated file): a subagent on a **fast/small model** (e.g. Haiku) with a tight prompt.
-   - **M — standard** (a function plus tests, clear boundaries): a **general-purpose subagent** on the default model.
-   - **L — hard or risky** (cross-cutting changes, tricky logic, migrations, wide blast radius): do it **yourself in the main conversation** — full context beats delegation — or use a high-capability/high-effort subagent only if the task is genuinely self-contained.
+   - **S — mechanical** (boilerplate, config, renames, one isolated file): the **`sdd-quick`** subagent (pinned to Haiku) with a tight prompt.
+   - **M — standard** (a function plus tests, clear boundaries): the **`sdd-standard`** subagent (pinned to Sonnet).
+   - **L — hard or risky** (cross-cutting changes, tricky logic, migrations, wide blast radius): do it **yourself in the main conversation** — full context beats delegation.
 2. Give every subagent a **self-contained prompt**: the task text (Goal/Files/Check from its checklist line), the acceptance criteria it serves, the relevant `## Technical Plan` excerpt, the project conventions (CLAUDE.md / AGENTS.md), and the instruction to write/update tests.
 3. **Verify every result yourself** — run the tests, read the diff, check it against the task's **Check**. A subagent saying "done" is not verification.
 4. On success: **flip that task's `- [ ]` to `- [x]`** in the `## Tasks` section and push the updated issue body (`gh issue edit <n> --body-file <temp>`), advance the spec's status label exactly as `/implement` does (first checked task → add `sdd:in-progress`/remove `sdd:planned`; last → add `sdd:done`, remove the other `sdd:*` status label, and close the spec issue), and **commit** — one focused commit per task, so the PR reads as a reviewable series.

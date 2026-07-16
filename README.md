@@ -50,7 +50,7 @@ autonomously — plan, tasks, implementation, code review, and an open PR (see [
 | `/spec`          | Draft a spec as a GitHub issue — intent, boundaries, acceptance criteria    |
 | `/techplan`      | Derive the technical plan (the HOW) into the spec issue, with research      |
 | `/breakdown`     | Break the plan into a `## Tasks` checklist in the spec issue + check acceptance-criteria coverage |
-| `/implement`     | Implement exactly one checklist task — small, tested, reviewable; executor picked by difficulty (S/M → sub-agents, L → main conversation) |
+| `/implement`     | Implement exactly one checklist task — small, tested, reviewable; executor picked by difficulty (S → `sdd-quick`/Haiku, M → `sdd-standard`/Sonnet, L → main conversation) |
 | `/status`        | Show where each feature stands and what the next step is (read-only)        |
 | `/revise`        | Update the spec/plan/tasks in the issue and flag which downstream artifacts went stale |
 | `/reverse-spec`  | Generate a spec issue from existing code (brownfield adoption)              |
