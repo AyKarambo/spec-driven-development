@@ -1,6 +1,6 @@
 ---
 name: sdd-standard
-description: SDD implementation worker for M-sized (standard) tasks — a function plus tests with clear boundaries. Dispatched by /implement and /auto for one graded task at a time. Not for general use, and not for S (use sdd-quick) or L (the lead does those directly).
+description: SDD implementation worker for M-sized (standard) tasks — a function plus tests with clear boundaries. Dispatched by /implement and /sdd-auto for one graded task at a time. Not for general use, and not for S (use sdd-quick) or L (the lead does those directly).
 model: sonnet
 tools: Read, Edit, Write, Bash, Grep, Glob
 ---

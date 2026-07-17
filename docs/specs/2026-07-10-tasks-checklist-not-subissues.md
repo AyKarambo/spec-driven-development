@@ -37,7 +37,7 @@ and still governs.
   issue. The label set shrinks to `sdd`, `sdd:draft`, `sdd:planned`, `sdd:in-progress`, `sdd:done`.
 - **`/spec-cleanup`'s orphan-task-issue check is retired** for the same reason (no more free-floating
   task issues to go orphaned). Its stale-open-spec check is unchanged.
-- The spec-issue status lifecycle, auto-close-on-last-task behavior, and `/auto`'s resume/implementation
+- The spec-issue status lifecycle, auto-close-on-last-task behavior, and `/sdd-auto`'s resume/implementation
   logic are otherwise unchanged — they just read "all tasks checked" instead of "all sub-issues closed."
 
 ## 3 · Why override the v0.4 decision

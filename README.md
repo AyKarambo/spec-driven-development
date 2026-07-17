@@ -39,7 +39,7 @@ the next step begins. There is no auto-gating — the merge stays a human decisi
 - **A feature is done** when its spec issue is labeled `sdd:done` and **closed** — which is what keeps
   the issue list clean.
 
-Prefer to go hands-off once the spec is approved? **`/auto`** runs everything below the spec
+Prefer to go hands-off once the spec is approved? **`/sdd-auto`** runs everything below the spec
 autonomously — plan, tasks, implementation, code review, and an open PR (see [Auto mode](#auto-mode)).
 
 ## Commands
@@ -55,7 +55,7 @@ autonomously — plan, tasks, implementation, code review, and an open PR (see [
 | `/revise`        | Update the spec/plan/tasks in the issue and flag which downstream artifacts went stale |
 | `/reverse-spec`  | Generate a spec issue from existing code (brownfield adoption)              |
 | `/next`          | Run just the next step for a feature, and stop at its gate                  |
-| `/auto`          | Autopilot: after the spec issue exists, run plan → tasks → implementation → review → PR autonomously |
+| `/sdd-auto`          | Autopilot: after the spec issue exists, run plan → tasks → implementation → review → PR autonomously |
 | `/spec-cleanup`  | Finalize finished-but-open specs; flag long-stale SDD issues                |
 
 All commands are manual-only (`disable-model-invocation: true`) — **you** trigger them deliberately.
@@ -77,7 +77,7 @@ removing anything automatically). Run `/spec-cleanup --dry-run` to preview.
 ## Auto mode
 
 Once a spec is **approved** (i.e. the spec issue exists — `/spec` only creates it after your
-approval), **`/auto`** takes the feature the rest of the way without stopping at the intermediate
+approval), **`/sdd-auto`** takes the feature the rest of the way without stopping at the intermediate
 gates: technical plan → task breakdown → implementation → code review → an open pull request.
 
 - **Enter it at any point after the spec issue exists** — right after `/spec`, mid-planning, or
@@ -90,7 +90,7 @@ gates: technical plan → task breakdown → implementation → code review → 
 - **The diff is code-reviewed before the PR is opened** (skipped only if a review clearly already
   happened), and clear findings are fixed.
 - **It stops instead of pushing through** on repeated test failures, blockers, or spec conflicts —
-  and reports honestly what's done. Re-running `/auto` resumes from the still-unchecked tasks.
+  and reports honestly what's done. Re-running `/sdd-auto` resumes from the still-unchecked tasks.
 - **Two decisions are never automated:** approving the spec (the entry ticket) and merging the PR
   (auto mode ends at an open PR).
 
@@ -154,7 +154,7 @@ claude plugin install spec-driven-development@spec-driven-development-marketplac
 1. Open the **Code** tab → click **＋** next to the prompt box → **Plugins**.
 2. Choose **Add marketplace** and paste the local folder path.
 3. Open **Discover**, pick **Spec-Driven Development** → **Install**.
-4. Run `/reload-plugins` (or restart the app). `/spec`, `/techplan`, `/breakdown`, `/implement`, `/auto`, `/status`, `/revise`, `/reverse-spec`, `/next`, `/spec-cleanup`, and `/constitution` now appear.
+4. Run `/reload-plugins` (or restart the app). `/spec`, `/techplan`, `/breakdown`, `/implement`, `/sdd-auto`, `/status`, `/revise`, `/reverse-spec`, `/next`, `/spec-cleanup`, and `/constitution` now appear.
 
 ### Picking up changes
 
