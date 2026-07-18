@@ -40,8 +40,9 @@ function main() {
 
   const context =
     `ℹ️ Spec-Driven Development: a planning gate is active (${phase}). Specs/plans/tasks live in ` +
-    `GitHub issues (written via gh); on disk, only CLAUDE.md, AGENTS.md, and .claude/** can be ` +
-    `written until you run /implement or delete .claude/sdd/phase.`;
+    `GitHub issues (written via gh), never as Markdown files. While the gate is active, Markdown may ` +
+    `only be written to CLAUDE.md, AGENTS.md, and .claude/rules/** (other .md writes are denied); ` +
+    `other feature code is blocked too, until you run /implement or delete .claude/sdd/phase.`;
 
   const out = {
     hookSpecificOutput: {
