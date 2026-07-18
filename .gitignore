@@ -9,3 +9,8 @@ Thumbs.db
 # Local Claude Code session/runtime state
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+
+# Git worktrees created by /sdd-auto & branch-cleanup runs — must never ship inside the
+# plugin (a directory-source marketplace copies the whole tree, ignore rules and all,
+# so a stray worktree becomes a duplicate plugin copy in the install cache).
+.claude/worktrees/

@@ -1,6 +1,6 @@
 ---
 name: sdd-quick
-description: SDD implementation worker for S-sized (mechanical) tasks — boilerplate, config, renames, a single isolated file. Dispatched by /implement and /auto for one graded task at a time. Not for general use or for M/L tasks.
+description: SDD implementation worker for S-sized (mechanical) tasks — boilerplate, config, renames, a single isolated file. Dispatched by /implement and /sdd-auto for one graded task at a time. Not for general use or for M/L tasks.
 model: haiku
 tools: Read, Edit, Write, Bash, Grep, Glob
 ---

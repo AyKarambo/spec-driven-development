@@ -66,15 +66,15 @@ command writes the marker as its first action and *leaves it in place* through t
 | `/implement` | reads the slug from the marker, then **deletes** the marker first; implements one task from the spec issue's `## Tasks` checklist via a difficulty-graded executor (S → `sdd-quick`/Haiku, M → `sdd-standard`/Sonnet, L → main conversation); advances the spec issue's status label |
 | `/status` | read-only; never touches the marker |
 | `/next` | delegates marker handling to whichever single step it runs |
-| `/auto` | delegates to each phase it runs (planning phases write their marker, the implementation loop **deletes** it) — chains phases without stopping at intermediate gates; requires the spec issue to exist to start |
+| `/sdd-auto` | delegates to each phase it runs (planning phases write their marker, the implementation loop **deletes** it) — chains phases without stopping at intermediate gates; requires the spec issue to exist to start |
 | `/spec-cleanup` | **reads** the marker to protect the active slug; writes no marker (maintenance, like `/status`) |
 
-**Auto mode (v0.4).** `/auto` chains the remaining phases (plan → tasks → implement → review → PR)
+**Auto mode (v0.4).** `/sdd-auto` chains the remaining phases (plan → tasks → implement → review → PR)
 autonomously once a spec exists, resuming from whatever artifacts already exist. It introduces
 **no new marker phase, no new allowlist entry, and no new state file** — it reuses each phase's marker
 behavior and simply doesn't stop at the intermediate gates. Two human decisions stay manual: **spec
 approval** (the entry requirement — the **spec issue** existing *is* the approval, because `/spec`
-only creates it post-approval) and **the merge** (`/auto` ends at an open PR, never merges).
+only creates it post-approval) and **the merge** (`/sdd-auto` ends at an open PR, never merges).
 Implementation tasks are dispatched by difficulty: S → the `sdd-quick` subagent (Haiku), M →
 the `sdd-standard` subagent (Sonnet), L → the main conversation — the same grading `/implement` uses, so manual
 and autonomous runs behave identically per task. Design rationale:
@@ -132,8 +132,10 @@ reopens real work. `/spec-cleanup` finalizes finished-but-open specs and flags s
 - English throughout.
 - Commands are manual-only: every `commands/*.md` carries `disable-model-invocation: true` in its
   frontmatter, plus `description` and `argument-hint`; `$ARGUMENTS` is the user input.
-- Command names deliberately avoid native collisions: `/techplan` (not `/plan` = Plan Mode) and
-  `/breakdown` (not `/tasks` = background jobs).
+- Command names deliberately avoid native collisions: `/techplan` (not `/plan` = Plan Mode),
+  `/breakdown` (not `/tasks` = background jobs), and `/sdd-auto` (not `/auto` — bare `/auto` is
+  shadowed by Claude Code's built-in auto-mode commands `/auto-mode-setup` / `/auto-pause`, so a
+  plugin command named `auto` never surfaces in the menu; renamed in v0.8.0).
 - Every issue-touching command starts by verifying its **preconditions** (`gh` installed +
   authenticated, GitHub remote present) and stops with guidance if any is missing. `/constitution` is
   exempt (writes only `CLAUDE.md`/`AGENTS.md`/`.claude/rules/`).
@@ -156,7 +158,7 @@ code and touches no marker.
 
 ## Executor agents (`agents/*.md`)
 
-The difficulty-graded executor that `/implement` and `/auto` use is backed by two **plugin subagents with
+The difficulty-graded executor that `/implement` and `/sdd-auto` use is backed by two **plugin subagents with
 pinned models**, so the S/M tiers are deterministic instead of left to the lead's per-run model choice:
 
 - `agents/sdd-quick.md` — **Haiku**, for **S** (mechanical) tasks.
@@ -167,4 +169,4 @@ Both workers are scoped to SDD implementation only (their `description` says so,
 auto-delegation outside the workflow), carry only file/search/Bash tools, and do **no bookkeeping** — they
 implement one task and report back; the lead verifies the result, edits the GitHub issue, moves labels, and
 commits. If you rename a worker, change its pinned model, or add a tier, mirror it in **both** command files
-(`commands/implement.md` step 4 and `commands/auto.md`'s implementation loop) and in Contract A's table above.
+(`commands/implement.md` step 4 and `commands/sdd-auto.md`'s implementation loop) and in Contract A's table above.

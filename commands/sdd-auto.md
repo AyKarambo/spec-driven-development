@@ -39,7 +39,7 @@ As the first implementation action, **delete `.claude/sdd/phase`** — same cont
    - a task fails verification **twice** (after one repair attempt),
    - a subagent reports a real blocker, or the work contradicts the spec,
    - anything needs a scope decision that belongs to the human.
-   When stopping: report honestly what is done and committed, what failed, and why. A later `/auto` (or `/implement`) resumes from the still-unchecked tasks.
+   When stopping: report honestly what is done and committed, what failed, and why. A later `/sdd-auto` (or `/implement`) resumes from the still-unchecked tasks.
 
 Run tasks sequentially by default; parallelize via subagents only when tasks are provably independent (no shared files).
 

@@ -13,7 +13,7 @@ You implement **exactly one** task: $ARGUMENTS
    - **S — mechanical** (boilerplate, config, renames, one isolated file): dispatch the **`sdd-quick`** subagent (pinned to Haiku).
    - **M — standard** (a function plus tests, clear boundaries): dispatch the **`sdd-standard`** subagent (pinned to Sonnet).
    - **L — hard or risky** (cross-cutting changes, tricky logic, migrations, wide blast radius): implement it **yourself in the main conversation** — full context beats delegation.
-   Give the subagent a **self-contained prompt**: the task text (Goal/Files/Check), the acceptance criteria it serves (from the spec issue), the relevant `## Technical Plan` excerpt, the project conventions, and the instruction to write/update tests. (`/auto` uses this same grading for its implementation loop.)
+   Give the subagent a **self-contained prompt**: the task text (Goal/Files/Check), the acceptance criteria it serves (from the spec issue), the relevant `## Technical Plan` excerpt, the project conventions, and the instruction to write/update tests. (`/sdd-auto` uses this same grading for its implementation loop.)
 5. Keep the change **small and focused** so the review is easy.
 6. Afterwards, **verify the result yourself** regardless of who executed it — run the tests and read the diff against the task's **Check**; a subagent saying "done" is not verification. Then briefly summarize the diff, and update the issue:
    - Flip that task's `- [ ]` to `- [x]` within the `## Tasks` section of the body (leave the `## Spec`/`## Technical Plan` content and all marker pairs untouched), write the new body to a temp file, and `gh issue edit <n> --body-file <that file>`.
