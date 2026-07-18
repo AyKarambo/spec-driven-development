@@ -100,14 +100,16 @@ The planning commands write a tiny local marker `.claude/sdd/phase` (e.g. `spec:
 leave it in place through the review gate. A `PreToolUse` hook then guards the disk while the gate is up:
 
 - **No stray Markdown.** Spec/plan/tasks belong in the GitHub issue, so any `.md` write is **denied**
-  unless it's a project rule file — `CLAUDE.md`, `AGENTS.md`, or `.claude/rules/**`. You can't
-  accidentally save the spec as `spec.md` (or `specs/x.md`, or even `.claude/notes.md`).
+  unless it's a project rule file (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/**`) or transient scratch under
+  the gitignored `.claude/sdd/`. You can't accidentally save the spec as `spec.md` (or `specs/x.md`, or
+  even `.claude/notes.md`).
 - **No premature feature code.** Every other write is denied unless it's under the broad allowlist
   (`CLAUDE.md`, `AGENTS.md`, `.claude/**`), so code can't be written before the gate is approved.
 
-Specs/plans/tasks are written to GitHub via `gh` (a `Bash` call) from a transient, non-`.md` temp file
-that's deleted right after — so they pass the gate freely and leave nothing on disk. The **only** `.md`
-files the workflow ever writes are `CLAUDE.md` / `AGENTS.md` / `.claude/rules/**` (the constitution).
+Specs/plans/tasks are written to GitHub via `gh` (a `Bash` call) from a transient body file under the
+gitignored `.claude/sdd/` that's deleted right after — so it's never committed and leaves nothing behind.
+The **only** `.md` files the workflow ever *commits* are `CLAUDE.md` / `AGENTS.md` / `.claude/rules/**`
+(the constitution).
 
 - `/implement` **clears** the marker first (that's when code may be written).
 - A `SessionStart` notice surfaces an active gate so a stale marker is never invisible.

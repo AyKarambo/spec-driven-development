@@ -13,14 +13,15 @@ the `gh` CLI (authenticated, `repo` scope) and a GitHub remote. Design rationale
 [docs/specs/2026-07-10-tasks-checklist-not-subissues.md](docs/specs/2026-07-10-tasks-checklist-not-subissues.md)
 (tasks are a checklist inside the spec issue, not sub-issues).
 
-**Invariant (v0.9) — no stray Markdown.** The workflow never writes a spec/plan/tasks Markdown file into a
-consuming repo. The **only** `.md` files it ever writes there are the project rule files — `CLAUDE.md`,
-`AGENTS.md`, and `.claude/rules/**` (the constitution). Everything else (specs, plans, tasks) lives in
-GitHub issues, piped in via `gh` from a **transient, non-`.md`** temp file (`.claude/sdd/issue-body.txt`)
-that the command deletes right after. This is enforced on two sides that must stay in sync: the
-`gate-guard.js` hook (denies stray `.md` writes while a gate is active) and every artifact command's
-**"the issue is the only store"** note. Rationale:
-[docs/specs/2026-07-18-v0.9-no-stray-markdown.md](docs/specs/2026-07-18-v0.9-no-stray-markdown.md).
+**Invariant (v0.9) — no committed spec/plan/tasks Markdown.** The workflow never commits a spec/plan/tasks
+Markdown file to a consuming repo. The **only** `.md` files it writes into the tracked tree are the project
+rule files — `CLAUDE.md`, `AGENTS.md`, and `.claude/rules/**` (the constitution). Everything else (specs,
+plans, tasks) lives in GitHub issues, piped in via `gh` from a **transient** body file under the
+**gitignored** `.claude/sdd/` (`.claude/sdd/issue-body.md`) that the command **deletes right after** — so
+it is never committed, whatever its extension. This is enforced on two sides that must stay in sync: the
+`gate-guard.js` hook (while a gate is active, denies stray `.md` writes except the rule files and the
+gitignored `.claude/sdd/` scratch) and every artifact command's **"the issue is the only store"** note.
+Rationale: [docs/specs/2026-07-18-v0.9-no-stray-markdown.md](docs/specs/2026-07-18-v0.9-no-stray-markdown.md).
 
 ## ⚠️ Release checklist — do this for EVERY change that ships
 
@@ -93,18 +94,19 @@ and autonomous runs behave identically per task. Design rationale:
 
 - `gate-guard.js` (`PreToolUse` on `Write|Edit|MultiEdit|NotebookEdit`): while the marker exists it applies
   two rules (both fail open, both silent when no marker):
-  - **Markdown (`*.md`/`*.markdown`) — deny unless it's a project rule file:** the only Markdown that may
-    hit disk during a gate is `CLAUDE.md`, `AGENTS.md`, or `.claude/rules/**`. This is what stops a
-    spec/plan/tasks doc from being saved as a stray `.md` file (e.g. `spec.md`, `specs/x.md`, even
-    `.claude/notes.md`) instead of going into the GitHub issue.
+  - **Markdown (`*.md`/`*.markdown`) — deny unless it's a rule file or gitignored scratch:** the only
+    Markdown that may hit disk during a gate is `CLAUDE.md`, `AGENTS.md`, `.claude/rules/**`, or transient
+    scratch under the gitignored `.claude/sdd/**`. This is what stops a spec/plan/tasks doc from being saved
+    as a stray, committed `.md` file (e.g. `spec.md`, `specs/x.md`, even `.claude/notes.md`) instead of
+    going into the GitHub issue.
   - **Everything else (feature code) — deny unless under the broad allowlist** `CLAUDE.md`, `AGENTS.md`,
     `.claude/**` (plus any path outside the repo). So feature code can't be written on disk while a
     planning gate is open. (There is no `specs/**` entry — specs are not files.)
 
-  The transient issue-body file the commands pipe into `gh` lives under `.claude/sdd/` and is deliberately
-  **not** a `.md` (it's `.claude/sdd/issue-body.txt`), so it passes the second rule and never looks like a
-  stray spec. The tightened Markdown rule is why the invariant below holds; mirror it in every command's
-  "the issue is the only store" note and in the `session-notice.js` message.
+  The transient issue-body file the commands pipe into `gh` (`.claude/sdd/issue-body.md`) lives under the
+  gitignored `.claude/sdd/`, so it's allowed by the Markdown rule and — deleted right after use, never
+  tracked — is never committed, whatever its extension. The Markdown rule is why the invariant above holds;
+  mirror it in every command's "the issue is the only store" note and in the `session-notice.js` message.
 - `session-notice.js` (`SessionStart`): surfaces an active marker as context, so a stale gate is never invisible.
 
 Non-negotiable hook properties — **preserve these when editing**:
@@ -138,11 +140,11 @@ that reads or writes them.
   `sdd:done` `0E8A16`. (No `sdd:task` label — nothing task-shaped needs labeling anymore.)
 - **Slug → issue lookup:** no repo-side map (that would defeat the clean-repo goal). Commands run
   `gh issue list --label sdd --state all --json …` and match the title prefix `[SDD] <slug>:`.
-- **Bodies** are written by piping a **transient, non-`.md`** temp file (`.claude/sdd/issue-body.txt`) to
+- **Bodies** are written by piping a **transient** temp file (`.claude/sdd/issue-body.md`) to
   `gh issue create/edit --body-file`, and the command **deletes it right after** the `gh` call. The file
-  is gitignored and passes the gate (it's under `.claude/sdd/` and not a `.md`). It is deliberately not a
-  `.md` so the "no stray Markdown" invariant holds literally — mirror this name and the delete-after step
-  in every command that writes a body.
+  lives under the **gitignored** `.claude/sdd/`, so it passes the gate and — being deleted right away and
+  never tracked — is never committed (its `.md` extension is fine because nothing under `.claude/sdd/` is
+  ever committed). Mirror this name and the delete-after step in every command that writes a body.
 
 The lifecycle a command maintains: `/spec` → `sdd:draft`; `/techplan` → `sdd:planned`; `/breakdown`
 ensures `sdd:planned`; `/implement` → `sdd:in-progress` (first task checked) → `sdd:done` + close (last

@@ -5,13 +5,14 @@
  * While a planning gate is active (the file .claude/sdd/phase exists in the repo),
  * this blocks on-disk writes that would defeat the workflow. Specs, plans, and tasks
  * live in GitHub issues (written via `gh`, a Bash call this guard does not police), so
- * nothing but the project rule files should ever be written to disk during a gate.
+ * no spec/plan/tasks doc should ever be committed to disk during a gate.
  *
  * Two rules, applied only while a gate is active:
- *   1. Markdown files (*.md / *.markdown): DENY unless the path is one of the project
- *      rule files — CLAUDE.md, AGENTS.md, or .claude/rules/**. This is what stops a
- *      spec/plan/tasks doc from being saved as a stray Markdown file instead of going
- *      into the GitHub issue.
+ *   1. Markdown files (*.md / *.markdown): DENY unless the path is a project rule file
+ *      (CLAUDE.md, AGENTS.md, .claude/rules/**) OR transient scratch under the gitignored
+ *      .claude/sdd/** (where the commands write the issue-body file they pipe into `gh`,
+ *      then delete). This is what stops a spec/plan/tasks doc from being saved as a stray,
+ *      committed Markdown file instead of going into the GitHub issue.
  *   2. Everything else (feature code, etc.): DENY unless under the broad allowlist
  *      (CLAUDE.md, AGENTS.md, .claude/**), so feature code can't be written before the
  *      gate is approved.
@@ -19,8 +20,9 @@
  * When no marker exists it does nothing at all — zero impact on normal work, so non-SDD
  * repos and the implementation phase (marker already cleared) are completely unaffected.
  *
- * The transient issue-body file the commands pipe into `gh` lives under .claude/sdd/ and
- * is deliberately NOT a .md file, so it passes rule 2 and never looks like a stray spec.
+ * The transient issue-body file the commands pipe into `gh` lives under the gitignored
+ * .claude/sdd/, so it is allowed (rule 1) and — being deleted right after use and never
+ * tracked — is never committed, whatever its extension.
  *
  * Override: delete .claude/sdd/phase (or run /implement, which clears it).
  *
@@ -89,18 +91,20 @@ function main() {
   const rel = relNative.split(path.sep).join('/'); // posix-style, relative to repo
   if (rel === '..' || rel.startsWith('../')) process.exit(0);
 
-  // Rule 1 — Markdown: only the project rule files may be written on disk.
+  // Rule 1 — Markdown: only project rule files, or transient .claude/sdd/ scratch.
   if (isMarkdown(rel)) {
     const mdAllowed =
       rel === 'CLAUDE.md' ||
       rel === 'AGENTS.md' ||
-      rel.startsWith('.claude/rules/');
+      rel.startsWith('.claude/rules/') ||
+      rel.startsWith('.claude/sdd/'); // gitignored transient scratch (issue-body file)
     if (mdAllowed) process.exit(0);
     deny(
       `🚦 Spec-Driven gate active (${phase}). Specs, plans, and tasks live in GitHub issues — ` +
-      `don't save them as Markdown files. On disk, only CLAUDE.md, AGENTS.md, and .claude/rules/** ` +
-      `may be written. Put this content in the spec issue via gh (its body is piped from a transient ` +
-      `.claude/sdd/ temp file, which is not a .md). To override, delete .claude/sdd/phase.`
+      `don't save them as a committed Markdown file. On disk, Markdown may only go to CLAUDE.md, ` +
+      `AGENTS.md, .claude/rules/**, or the gitignored .claude/sdd/ scratch. Put this content in the ` +
+      `spec issue via gh (its body is piped from a transient .claude/sdd/ file, then deleted). ` +
+      `To override, delete .claude/sdd/phase.`
     );
   }
 
