@@ -9,5 +9,7 @@ Local git branches and worktrees pile up as feature work (e.g. spec-driven devel
 
 When the user asks for this kind of tidy-up, run the `/cleanup` command from this plugin rather than improvising `git branch -D` / `git worktree remove` / `git push origin --delete` calls inline — it encodes the safe classification rules (what's auto-deletable vs what needs the user's judgment) and the confirmation guardrails (local deletion is the safe default; deleting anything on `origin` is opt-in and always its own separate confirmation, never bundled with the local one).
 
+It always fetches and syncs the local default branch against `origin/<default-branch>` first, and classifies merge status against that synced remote state rather than a possibly-stale local `main` — so a branch that was actually merged upstream never gets stuck in the "needs your judgment" bucket just because `main` hadn't been pulled locally.
+
 - If the user only wants a report with nothing deleted, run `/cleanup --dry-run`.
 - If the user also wants matching branches deleted on `origin` (not just locally), run `/cleanup --remote` — or just mention it in plain language. Either way, `/cleanup` will still ask for an explicit go-ahead before deleting anything on the remote, separately from the local confirmation.

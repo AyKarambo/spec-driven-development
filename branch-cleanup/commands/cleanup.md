@@ -22,13 +22,18 @@ Arguments (optional): $ARGUMENTS
 
 1. `git fetch --prune` (safe: updates remote-tracking refs and drops refs to branches deleted on the remote; touches nothing local or on `origin`).
 2. Detect the default branch: try `git symbolic-ref refs/remotes/origin/HEAD`, falling back to whichever of `main`/`master` exists.
-3. `git worktree list --porcelain` — get every worktree path, branch, and HEAD.
-4. `git worktree prune -v` — removes registrations for worktrees whose directory is already gone from disk. Always safe, do it without asking, but report what it pruned.
-5. `git for-each-ref refs/heads --format="%(refname:short)|%(committerdate:iso-strict)|%(upstream:short)|%(upstream:track)"` — every local branch with its last commit date and upstream tracking state.
-6. `git branch --merged <default-branch>` — which local branches are fully merged into the default branch.
-7. Note the current branch (`git branch --show-current`).
-8. If `gh` is available (see memory: it may not be on PATH — try `"C:\Program Files\GitHub CLI\gh.exe"` too, otherwise skip this check silently), for any branch you're about to classify as deletable (local or remote), check `gh pr list --head <branch> --state open` — if an open PR exists, treat that branch as protected regardless of merge state.
-9. If `--remote` was passed, or the user asked for remote cleanup: also run `git for-each-ref refs/remotes/origin --format="%(refname:short)|%(committerdate:iso-strict)"` (excluding `origin/HEAD`) and `git branch -r --merged origin/<default-branch>` to get every remote branch's age and merge state.
+3. **Sync the local default branch with `origin/<default-branch>` before classifying anything.** `git fetch --prune` only updates the remote-tracking ref (`origin/main`) — a local `main` that's never checked out and pulled stays stale, which makes branches actually merged upstream look unmerged (they'd wrongly land in ASK instead of SAFE). Bring it up to date:
+   - If the default branch is checked out in the main working directory or in a worktree: run `git -C <that-path> pull --ff-only`. If that fails (dirty tree, diverged history), don't force it — just note it and move on; the local ref simply stays where it is.
+   - Otherwise (not checked out anywhere): fast-forward the local ref directly with `git fetch origin <default-branch>:<default-branch>`, which only succeeds on a clean fast-forward and touches no working tree since nothing has it checked out.
+   - Either way this is fast-forward-only and ref-move-only — never a merge, rebase, or force — so it's as safe as `git fetch --prune` and needs no confirmation.
+   - **Use `origin/<default-branch>` (not the bare local branch name) as the merge basis in every check below and in Step 2/Step 5**, so classification always reflects the actual remote state even on the rare run where the local ref couldn't be fast-forwarded. If the local default branch has diverged from `origin/<default-branch>` (i.e. it has commits `origin/<default-branch>` doesn't), call that out prominently in the report — it usually means someone committed directly to the default branch instead of through a PR.
+4. `git worktree list --porcelain` — get every worktree path, branch, and HEAD.
+5. `git worktree prune -v` — removes registrations for worktrees whose directory is already gone from disk. Always safe, do it without asking, but report what it pruned.
+6. `git for-each-ref refs/heads --format="%(refname:short)|%(committerdate:iso-strict)|%(upstream:short)|%(upstream:track)"` — every local branch with its last commit date and upstream tracking state.
+7. `git branch --merged origin/<default-branch>` — which local branches are fully merged into the default branch, checked against the just-synced remote ref.
+8. Note the current branch (`git branch --show-current`).
+9. If `gh` is available (see memory: it may not be on PATH — try `"C:\Program Files\GitHub CLI\gh.exe"` too, otherwise skip this check silently), for any branch you're about to classify as deletable (local or remote), check `gh pr list --head <branch> --state open` — if an open PR exists, treat that branch as protected regardless of merge state.
+10. If `--remote` was passed, or the user asked for remote cleanup: also run `git for-each-ref refs/remotes/origin --format="%(refname:short)|%(committerdate:iso-strict)"` (excluding `origin/HEAD`) and `git branch -r --merged origin/<default-branch>` to get every remote branch's age and merge state.
 
 ## Step 2 — classify every non-default, non-current branch
 
@@ -37,7 +42,7 @@ For each worktree directory found in step 1 (other than the main one), run `git 
 Bucket each **local** branch:
 
 - **PROTECTED** — default branch, current branch, `develop`/`staging`/`release/*`-style names, or has an open PR. Skip entirely, don't even list as a candidate.
-- **SAFE — auto-delete** — merged into the default branch, no unpushed commits ahead of its upstream (or no upstream at all but merged), and either has no worktree or has a *clean* worktree.
+- **SAFE — auto-delete** — merged into `origin/<default-branch>` (per the sync in Step 1), no unpushed commits ahead of its upstream (or no upstream at all but merged), and either has no worktree or has a *clean* worktree.
 - **NEEDS-WORKTREE-REMOVAL-FIRST** — same as SAFE but has a worktree directory that must be removed before the branch ref can go; still safe if that worktree is clean.
 - **ASK** — everything else: not merged into default, diverged/ahead of upstream, dirty worktree, no upstream and unclear if it was ever pushed/reviewed, or last commit is very recent (say, under 48 hours — likely still active work in progress).
 
