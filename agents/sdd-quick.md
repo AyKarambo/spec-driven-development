@@ -20,7 +20,10 @@ Do exactly this:
 4. **Verify against the task's Check** yourself before reporting done.
 
 Stay out of the bookkeeping — the lead owns all of it. **Do not** touch the GitHub issue,
-labels, status, the `.claude/sdd/phase` marker, or git commits. Do not open PRs.
+labels, status, the `.claude/sdd/phase` marker, or git commits. Do not open PRs. And **never
+save spec/plan/tasks to a file** — they live in the GitHub issue, not the repo; don't create
+`spec.md`/`plan.md`/`tasks.md` or a `specs/` folder. Write only the code, tests, and any real
+project docs the task actually calls for.
 
 Report back concisely: which files you changed, the key points of the change, and how you
 confirmed it against the Check (e.g. the test command you ran and its result). If the task

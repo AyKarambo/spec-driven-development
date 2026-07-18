@@ -97,10 +97,19 @@ gates: technical plan → task breakdown → implementation → code review → 
 ## The gate guardrail
 
 The planning commands write a tiny local marker `.claude/sdd/phase` (e.g. `spec:invoice-export`) and
-leave it in place through the review gate. A `PreToolUse` hook then **blocks writes to anything outside
-a small allowlist** (`CLAUDE.md`, `AGENTS.md`, `.claude/**`) so feature code can't be written before a
-gate is approved. Specs/plans/tasks are written to GitHub via `gh` (a `Bash` call), so they're
-unaffected — only on-disk code is gated.
+leave it in place through the review gate. A `PreToolUse` hook then guards the disk while the gate is up:
+
+- **No stray Markdown.** Spec/plan/tasks belong in the GitHub issue, so any `.md` write is **denied**
+  unless it's a project rule file (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/**`) or transient scratch under
+  the gitignored `.claude/sdd/`. You can't accidentally save the spec as `spec.md` (or `specs/x.md`, or
+  even `.claude/notes.md`).
+- **No premature feature code.** Every other write is denied unless it's under the broad allowlist
+  (`CLAUDE.md`, `AGENTS.md`, `.claude/**`), so code can't be written before the gate is approved.
+
+Specs/plans/tasks are written to GitHub via `gh` (a `Bash` call) from a transient body file under the
+gitignored `.claude/sdd/` that's deleted right after — so it's never committed and leaves nothing behind.
+The **only** `.md` files the workflow ever *commits* are `CLAUDE.md` / `AGENTS.md` / `.claude/rules/**`
+(the constitution).
 
 - `/implement` **clears** the marker first (that's when code may be written).
 - A `SessionStart` notice surfaces an active gate so a stale marker is never invisible.

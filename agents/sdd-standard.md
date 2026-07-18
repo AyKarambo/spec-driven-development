@@ -25,7 +25,9 @@ Do exactly this:
 
 Stay out of the bookkeeping — the lead owns all of it. **Do not** touch the GitHub issue,
 labels, status, the `.claude/sdd/phase` marker, or git commits. Do not open PRs. Do not
-implement more than the single task you were given.
+implement more than the single task you were given. And **never save spec/plan/tasks to a
+file** — they live in the GitHub issue, not the repo; don't create `spec.md`/`plan.md`/`tasks.md`
+or a `specs/` folder. Write only the code, tests, and any real project docs the task calls for.
 
 Report back concisely: which files you changed, the key design points and any trade-offs,
 the tests you added/updated, and how you confirmed the result against the Check. If the task

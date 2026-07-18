@@ -13,6 +13,16 @@ the `gh` CLI (authenticated, `repo` scope) and a GitHub remote. Design rationale
 [docs/specs/2026-07-10-tasks-checklist-not-subissues.md](docs/specs/2026-07-10-tasks-checklist-not-subissues.md)
 (tasks are a checklist inside the spec issue, not sub-issues).
 
+**Invariant (v0.9) — no committed spec/plan/tasks Markdown.** The workflow never commits a spec/plan/tasks
+Markdown file to a consuming repo. The **only** `.md` files it writes into the tracked tree are the project
+rule files — `CLAUDE.md`, `AGENTS.md`, and `.claude/rules/**` (the constitution). Everything else (specs,
+plans, tasks) lives in GitHub issues, piped in via `gh` from a **transient** body file under the
+**gitignored** `.claude/sdd/` (`.claude/sdd/issue-body.md`) that the command **deletes right after** — so
+it is never committed, whatever its extension. This is enforced on two sides that must stay in sync: the
+`gate-guard.js` hook (while a gate is active, denies stray `.md` writes except the rule files and the
+gitignored `.claude/sdd/` scratch) and every artifact command's **"the issue is the only store"** note.
+Rationale: [docs/specs/2026-07-18-v0.9-no-stray-markdown.md](docs/specs/2026-07-18-v0.9-no-stray-markdown.md).
+
 ## ⚠️ Release checklist — do this for EVERY change that ships
 
 1. **Bump the version in BOTH manifests — they must always match:**
@@ -82,10 +92,21 @@ and autonomous runs behave identically per task. Design rationale:
 
 **2. Hooks (`hooks/*.js`, wired by `hooks/hooks.json`)** — Node scripts that read the marker and react:
 
-- `gate-guard.js` (`PreToolUse` on `Write|Edit|MultiEdit|NotebookEdit`): if the marker exists, **denies**
-  writes to anything outside the allowlist — `CLAUDE.md`, `AGENTS.md`, `.claude/**` (plus any path
-  outside the repo). So feature code can't be written on disk while a planning gate is open. (There is
-  no `specs/**` entry anymore — specs are not files.)
+- `gate-guard.js` (`PreToolUse` on `Write|Edit|MultiEdit|NotebookEdit`): while the marker exists it applies
+  two rules (both fail open, both silent when no marker):
+  - **Markdown (`*.md`/`*.markdown`) — deny unless it's a rule file or gitignored scratch:** the only
+    Markdown that may hit disk during a gate is `CLAUDE.md`, `AGENTS.md`, `.claude/rules/**`, or transient
+    scratch under the gitignored `.claude/sdd/**`. This is what stops a spec/plan/tasks doc from being saved
+    as a stray, committed `.md` file (e.g. `spec.md`, `specs/x.md`, even `.claude/notes.md`) instead of
+    going into the GitHub issue.
+  - **Everything else (feature code) — deny unless under the broad allowlist** `CLAUDE.md`, `AGENTS.md`,
+    `.claude/**` (plus any path outside the repo). So feature code can't be written on disk while a
+    planning gate is open. (There is no `specs/**` entry — specs are not files.)
+
+  The transient issue-body file the commands pipe into `gh` (`.claude/sdd/issue-body.md`) lives under the
+  gitignored `.claude/sdd/`, so it's allowed by the Markdown rule and — deleted right after use, never
+  tracked — is never committed, whatever its extension. The Markdown rule is why the invariant above holds;
+  mirror it in every command's "the issue is the only store" note and in the `session-notice.js` message.
 - `session-notice.js` (`SessionStart`): surfaces an active marker as context, so a stale gate is never invisible.
 
 Non-negotiable hook properties — **preserve these when editing**:
@@ -111,16 +132,19 @@ that reads or writes them.
   labeled `sdd:done` AND closed.**
 - **Tasks are a checklist, not sub-issues:** lines inside `## Tasks`, one per task —
   `- [ ] **T<n>: <goal>** (S/M/L)` with indented Files/Check sub-lines. **Done ⇒ the line is checked
-  (`- [x]`)**, pushed with `gh issue edit <n> --body-file -` on the same issue. Progress is the
-  checked/total count of those lines, read directly from the body — there is no `subIssuesSummary` to
+  (`- [x]`)**, pushed with `gh issue edit <n> --body-file <transient temp>` on the same issue. Progress is
+  the checked/total count of those lines, read directly from the body — there is no `subIssuesSummary` to
   read, because there are no sub-issues.
 - **Labels** (bootstrapped idempotently by `/spec` and `/reverse-spec` with `gh label create … 2>/dev/null || true`):
   `sdd` `5319E7`, `sdd:draft` `BFDADC`, `sdd:planned` `1D76DB`, `sdd:in-progress` `FBCA04`,
   `sdd:done` `0E8A16`. (No `sdd:task` label — nothing task-shaped needs labeling anymore.)
 - **Slug → issue lookup:** no repo-side map (that would defeat the clean-repo goal). Commands run
   `gh issue list --label sdd --state all --json …` and match the title prefix `[SDD] <slug>:`.
-- **Bodies** are written by piping a temp file to `gh issue create/edit --body-file` (a temp file under
-  `.claude/sdd/` is gitignored and on the gate allowlist).
+- **Bodies** are written by piping a **transient** temp file (`.claude/sdd/issue-body.md`) to
+  `gh issue create/edit --body-file`, and the command **deletes it right after** the `gh` call. The file
+  lives under the **gitignored** `.claude/sdd/`, so it passes the gate and — being deleted right away and
+  never tracked — is never committed (its `.md` extension is fine because nothing under `.claude/sdd/` is
+  ever committed). Mirror this name and the delete-after step in every command that writes a body.
 
 The lifecycle a command maintains: `/spec` → `sdd:draft`; `/techplan` → `sdd:planned`; `/breakdown`
 ensures `sdd:planned`; `/implement` → `sdd:in-progress` (first task checked) → `sdd:done` + close (last
@@ -168,5 +192,8 @@ pinned models**, so the S/M tiers are deterministic instead of left to the lead'
 Both workers are scoped to SDD implementation only (their `description` says so, to avoid spurious
 auto-delegation outside the workflow), carry only file/search/Bash tools, and do **no bookkeeping** — they
 implement one task and report back; the lead verifies the result, edits the GitHub issue, moves labels, and
-commits. If you rename a worker, change its pinned model, or add a tier, mirror it in **both** command files
+commits. They also carry the **no-stray-Markdown rule** (spec/plan/tasks stay in the issue, never a file) —
+they do the writing for S/M tasks during the implementation phase, when the gate hook is idle by design, so
+that rule can't rely on the hook and must live in the agent files (see the v0.9 invariant above). If you
+rename a worker, change its pinned model, or add a tier, mirror it in **both** command files
 (`commands/implement.md` step 4 and `commands/sdd-auto.md`'s implementation loop) and in Contract A's table above.

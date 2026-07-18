@@ -8,6 +8,8 @@ You take the feature **$ARGUMENTS** on **autopilot**: everything after the appro
 
 Specs, plans, and tasks live in **GitHub issues** (see the other SDD commands). **Preconditions:** `gh` installed + authenticated, and a GitHub remote (stop with guidance if missing).
 
+**The issue is the only store for spec/plan/tasks.** Autopilot writes real feature code during implementation — but the spec, plan, and task checklist live in the GitHub issue, never in a repo file. Don't mirror or "save" them into `spec.md`/`plan.md`/`tasks.md`/a `specs/` folder; each planning phase writes its section into the issue via `gh`, and the implementation loop updates the checklist there. Any issue-body text piped into `gh` goes through a **transient** file under the gitignored `.claude/sdd/`, deleted right after (so it's never committed). (While a planning-phase marker is set, a gate hook denies stray `.md` writes except to `CLAUDE.md`/`AGENTS.md`/`.claude/rules/**` and the gitignored `.claude/sdd/` scratch.)
+
 ## Entry check — the one gate autopilot cannot skip
 
 1. Resolve the **slug** from `$ARGUMENTS`, else the current branch. State the slug you resolved.
@@ -34,7 +36,7 @@ As the first implementation action, **delete `.claude/sdd/phase`** — same cont
    - **L — hard or risky** (cross-cutting changes, tricky logic, migrations, wide blast radius): do it **yourself in the main conversation** — full context beats delegation.
 2. Give every subagent a **self-contained prompt**: the task text (Goal/Files/Check from its checklist line), the acceptance criteria it serves, the relevant `## Technical Plan` excerpt, the project conventions (CLAUDE.md / AGENTS.md), and the instruction to write/update tests.
 3. **Verify every result yourself** — run the tests, read the diff, check it against the task's **Check**. A subagent saying "done" is not verification.
-4. On success: **flip that task's `- [ ]` to `- [x]`** in the `## Tasks` section and push the updated issue body (`gh issue edit <n> --body-file <temp>`), advance the spec's status label exactly as `/implement` does (first checked task → add `sdd:in-progress`/remove `sdd:planned`; last → add `sdd:done`, remove the other `sdd:*` status label, and close the spec issue), and **commit** — one focused commit per task, so the PR reads as a reviewable series.
+4. On success: **flip that task's `- [ ]` to `- [x]`** in the `## Tasks` section and push the updated issue body (`gh issue edit <n> --body-file .claude/sdd/issue-body.md`, then delete the temp file), advance the spec's status label exactly as `/implement` does (first checked task → add `sdd:in-progress`/remove `sdd:planned`; last → add `sdd:done`, remove the other `sdd:*` status label, and close the spec issue), and **commit** — one focused commit per task, so the PR reads as a reviewable series.
 5. **Stop rules** — autopilot stops and reports instead of pushing through when:
    - a task fails verification **twice** (after one repair attempt),
    - a subagent reports a real blocker, or the work contradicts the spec,
